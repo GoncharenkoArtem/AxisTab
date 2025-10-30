@@ -10,7 +10,7 @@ using System.Globalization;
 using Autodesk.AutoCAD.Interop.Common;
 using Autodesk.AutoCAD.DatabaseServices;
 using System.Windows.Documents;
-using Autodesk.AutoCAD.GraphicsInterface;
+//using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
 using Autodesk.AutoCAD.Colors;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
@@ -259,13 +259,12 @@ namespace TSODD
 
 
 
-        // тестовый метод
-        public static void Test() 
-        { 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            var db = doc.Database;
-            var ed = doc.Editor;
-            
+       
+
+
+
+
+
             //using (var tr = db.TransactionManager.StartTransaction())
             //{
             //    var filter = new SelectionFilter(new TypedValue[] { new TypedValue((int)DxfCode.Operator, "<OR"),
@@ -294,46 +293,48 @@ namespace TSODD
             //}
 
 
-            RefreshLineTypesInAcad();
+        //    RefreshLineTypesInAcad();
 
 
-        }
+        //}
 
 
 
         // тестовый метод 2
         public static void Test2()
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            var db = doc.Database;
-            var ed = doc.Editor;
-            using (var tr = db.TransactionManager.StartTransaction())
-            {
-                var filter = new SelectionFilter(new TypedValue[] { new TypedValue((int)DxfCode.Operator, "<OR"),
-                                                                    new TypedValue((int)DxfCode.Start, "LWPOLYLINE"),
-                                                                    new TypedValue((int)DxfCode.Start, "MULTILEADER"),
-                                                                    new TypedValue((int)DxfCode.Operator, "OR>")});
-                var pso = new PromptSelectionOptions
-                {
-                    MessageForAdding = "\nВыберите полилинии или выноску:",
-                    SingleOnly = false, // можно выбрать несколько
-                    AllowDuplicates = false
-                };
+            //var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            //var db = doc.Database;
+            //var ed = doc.Editor;
+           
+            
+            
+            //using (var tr = db.TransactionManager.StartTransaction())
+            //{
+            //    var filter = new SelectionFilter(new TypedValue[] { new TypedValue((int)DxfCode.Operator, "<OR"),
+            //                                                        new TypedValue((int)DxfCode.Start, "LWPOLYLINE"),
+            //                                                        new TypedValue((int)DxfCode.Start, "MULTILEADER"),
+            //                                                        new TypedValue((int)DxfCode.Operator, "OR>")});
+            //    var pso = new PromptSelectionOptions
+            //    {
+            //        MessageForAdding = "\nВыберите полилинии или выноску:",
+            //        SingleOnly = false, // можно выбрать несколько
+            //        AllowDuplicates = false
+            //    };
 
-                var psr = ed.GetSelection(pso, filter);
+            //    var psr = ed.GetSelection(pso, filter);
 
-                if (psr.Status != PromptStatus.OK) return; // неудачный промпт, выходим
+            //    if (psr.Status != PromptStatus.OK) return; // неудачный промпт, выходим
 
-                Handle hand = TsoddHost.Current.currentAxis.PolyHandle;
+            //    Handle hand = TsoddHost.Current.currentAxis.PolyHandle;
 
-                foreach (var id in psr.Value.GetObjectIds())
-                {
-                    AutocadXData.UpdateXData(id,hand.ToString());
-                    //var ll = AutocadXData.ReadXData(id);
-                }
+            //    foreach (var id in psr.Value.GetObjectIds())
+            //    {
+            //       var dd = AutocadXData.ReadXData(id);
+            //    }
 
-                tr.Commit();
-            }
+            //    tr.Commit();
+            //}
 
 
         }
@@ -550,6 +551,9 @@ namespace TSODD
                         foreach (var val in listVal) txt_val += $",{val}";
                         string name = $"{ lt.Name } ({ txt_val.Replace(",", "_").Substring(1).TrimStart()})";
 
+                        // проверка на сплошную линию
+                        if (listVal.Contains(1000))  name = $"{lt.Name} (continuous)";
+
                         dublicate = tempNameList.Any(n => n == name);
 
                         if (!dublicate)
@@ -583,9 +587,7 @@ namespace TSODD
                         tr.Commit();
                     }
                 }
-
             }
-     
         }
 
 

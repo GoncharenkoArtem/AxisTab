@@ -48,36 +48,36 @@ namespace TSODD
         public static bool blockInsertFlag = true;
 
 
-        // метод проверяет существует ли блок "AXIS_BLOCK", если его нет, то создает
-        private static void CreateBlock()
-        {
-            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
-            var db = doc.Database;
-            const string blockName = "AXIS_BLOCK"; // имя блока
+        //// метод проверяет существует ли блок "AXIS_BLOCK", если его нет, то создает
+        //private static void CreateBlock()
+        //{
+        //    var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
+        //    var db = doc.Database;
+        //    const string blockName = "AXIS_BLOCK"; // имя блока
 
-            using (var tr = db.TransactionManager.StartTransaction())
-            {
-                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        //    using (var tr = db.TransactionManager.StartTransaction())
+        //    {
+        //        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-                //ObjectId btrId;
-                if (bt.Has(blockName)) return;
+        //        //ObjectId btrId;
+        //        if (bt.Has(blockName)) return;
 
-                // Создаём пустое определение блока
-                bt.UpgradeOpen();
-                var btr = new BlockTableRecord { Name = blockName };
-                bt.Add(btr);
-                tr.AddNewlyCreatedDBObject(btr, true);
+        //        // Создаём пустое определение блока
+        //        bt.UpgradeOpen();
+        //        var btr = new BlockTableRecord { Name = blockName };
+        //        bt.Add(btr);
+        //        tr.AddNewlyCreatedDBObject(btr, true);
 
-                // Добавляем невидимые атрибуты 
-                AddHiddenAttr(btr, tr, tag: "POLYHANDLE", prompt: "Handle полилинии оси", defaultValue: "", 0);
-                AddHiddenAttr(btr, tr, tag: "AXISNAME", prompt: "Наименование оси", defaultValue: "", 1);
-                //AddHiddenAttr(btr, tr, tag: "STARTPOINT", prompt: "Начальная точка", defaultValue: "", 2);
-                AddHiddenAttr(btr, tr, tag: "REVERSE", prompt: "Реверсивное направление", defaultValue: "", 3);
-                AddHiddenAttr(btr, tr, tag: "PK", prompt: "Начальный пикет", defaultValue: "", 4);
+        //        // Добавляем невидимые атрибуты 
+        //        AddHiddenAttr(btr, tr, tag: "POLYHANDLE", prompt: "Handle полилинии оси", defaultValue: "", 0);
+        //        AddHiddenAttr(btr, tr, tag: "AXISNAME", prompt: "Наименование оси", defaultValue: "", 1);
+        //        //AddHiddenAttr(btr, tr, tag: "STARTPOINT", prompt: "Начальная точка", defaultValue: "", 2);
+        //        AddHiddenAttr(btr, tr, tag: "REVERSE", prompt: "Реверсивное направление", defaultValue: "", 3);
+        //        AddHiddenAttr(btr, tr, tag: "PK", prompt: "Начальный пикет", defaultValue: "", 4);
 
-                tr.Commit();
-            }
-        }
+        //        tr.Commit();
+        //    }
+        //}
 
 
         // метод создания нового атрибута
@@ -101,84 +101,84 @@ namespace TSODD
         }
 
 
-        // метод проверяет, существует ли определение блока по имени блока, и создает либо обновляет его (атрибуты)
-        public static void AddAxisBlock(Axis axis)
-        {
-            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
-            var db = doc.Database;
-            const string blockName = "AXIS_BLOCK"; // имя блока
+        //// метод проверяет, существует ли определение блока по имени блока, и создает либо обновляет его (атрибуты)
+        //public static void AddAxisBlock(Axis axis)
+        //{
+        //    var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
+        //    var db = doc.Database;
+        //    const string blockName = "AXIS_BLOCK"; // имя блока
 
-            using (ACAD.DocumentLock docLock = doc.LockDocument()) // Блокируем документ
-            {
-                // проверяем есть ли блок в реестре, если нет, то создаем его
-                CreateBlock();
+        //    using (ACAD.DocumentLock docLock = doc.LockDocument()) // Блокируем документ
+        //    {
+        //        // проверяем есть ли блок в реестре, если нет, то создаем его
+        //        CreateBlock();
 
-                // Ищем вхождение блока с нужными атрибутами (по наименованию оси)
-                using (var tr = db.TransactionManager.StartTransaction())
-                {
-                    // ищем Id блока
-                    ObjectId btrId;
-                    var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        //        // Ищем вхождение блока с нужными атрибутами (по наименованию оси)
+        //        using (var tr = db.TransactionManager.StartTransaction())
+        //        {
+        //            // ищем Id блока
+        //            ObjectId btrId;
+        //            var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-                    btrId = bt[blockName];
+        //            btrId = bt[blockName];
 
-                    // определение блока
-                    var def = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
+        //            // определение блока
+        //            var def = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
 
-                    // ищем нужный блок
-                    var axisBlockRef = FindAxisBlock(def, tr, axis.PolyHandle);
+        //            // ищем нужный блок
+        //            var axisBlockRef = FindAxisBlock(def, tr, axis.PolyHandle);
 
-                    if (axisBlockRef == null) // если не нашли, то вставляем новый блок в 0 
-                    {
-                        var ms = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-                        axisBlockRef = new BlockReference(Point3d.Origin, btrId);
-                        ms.AppendEntity(axisBlockRef);
-                        tr.AddNewlyCreatedDBObject(axisBlockRef, true);
+        //            if (axisBlockRef == null) // если не нашли, то вставляем новый блок в 0 
+        //            {
+        //                var ms = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+        //                axisBlockRef = new BlockReference(Point3d.Origin, btrId);
+        //                ms.AppendEntity(axisBlockRef);
+        //                tr.AddNewlyCreatedDBObject(axisBlockRef, true);
 
-                        SetAttrValues(axisBlockRef, tr);
-                    }
+        //                SetAttrValues(axisBlockRef, tr);
+        //            }
 
-                    // заполняем/обновляем атрибуты блока
-                    ChangeAttribute(tr, axisBlockRef, "POLYHANDLE", axis.PolyHandle.ToString());
-                    ChangeAttribute(tr, axisBlockRef, "AXISNAME", axis.Name);
-                    //ChangeAttribute(tr, axisBlockRef, "STARTPOINT", $"{axis.StartPoint.X},{axis.StartPoint.Y},{axis.StartPoint.Z}");
-                    ChangeAttribute(tr, axisBlockRef, "REVERSE", axis.ReverseDirection.ToString());
-                    ChangeAttribute(tr, axisBlockRef, "PK", axis.StartPK.ToString());
+        //            // заполняем/обновляем атрибуты блока
+        //            ChangeAttribute(tr, axisBlockRef, "POLYHANDLE", axis.PolyHandle.ToString());
+        //            ChangeAttribute(tr, axisBlockRef, "AXISNAME", axis.Name);
+        //            //ChangeAttribute(tr, axisBlockRef, "STARTPOINT", $"{axis.StartPoint.X},{axis.StartPoint.Y},{axis.StartPoint.Z}");
+        //            ChangeAttribute(tr, axisBlockRef, "REVERSE", axis.ReverseDirection.ToString());
+        //            ChangeAttribute(tr, axisBlockRef, "PK", axis.StartPK.ToString());
 
-                    tr.Commit();
+        //            tr.Commit();
 
-                }
-            }
-        }
+        //        }
+        //    }
+        //}
 
 
-        // метод поиска нужного блока по Handle
-        private static BlockReference FindAxisBlock(BlockTableRecord def, Transaction tr, Handle axishandle)
-        {
-            foreach (ObjectId brId in def.GetBlockReferenceIds(/*directOnly*/ true, /*includeErased*/ false))
-            {
-                // получаем экземпляр блока
-                var br = (BlockReference)tr.GetObject(brId, OpenMode.ForRead);
+        //// метод поиска нужного блока по Handle
+        //private static BlockReference FindAxisBlock(BlockTableRecord def, Transaction tr, Handle axishandle)
+        //{
+        //    foreach (ObjectId brId in def.GetBlockReferenceIds(/*directOnly*/ true, /*includeErased*/ false))
+        //    {
+        //        // получаем экземпляр блока
+        //        var br = (BlockReference)tr.GetObject(brId, OpenMode.ForRead);
 
-                // открываем определение, на которое указывает вставка, для проверки Xref
-                var brDef = (BlockTableRecord)tr.GetObject(br.BlockTableRecord, OpenMode.ForRead);
+        //        // открываем определение, на которое указывает вставка, для проверки Xref
+        //        var brDef = (BlockTableRecord)tr.GetObject(br.BlockTableRecord, OpenMode.ForRead);
 
-                // если это внешняя ссылка (attach/overlay) — пропускаем
-                if (brDef.IsFromExternalReference || brDef.IsFromOverlayReference)
-                    continue;
+        //        // если это внешняя ссылка (attach/overlay) — пропускаем
+        //        if (brDef.IsFromExternalReference || brDef.IsFromOverlayReference)
+        //            continue;
 
-                // Обход атрибутов вставки 
-                foreach (ObjectId arId in br.AttributeCollection)
-                {
-                    var ar = (AttributeReference)tr.GetObject(arId, OpenMode.ForRead);
+        //        // Обход атрибутов вставки 
+        //        foreach (ObjectId arId in br.AttributeCollection)
+        //        {
+        //            var ar = (AttributeReference)tr.GetObject(arId, OpenMode.ForRead);
 
-                    if (ar.Tag.Equals("POLYHANDLE", StringComparison.OrdinalIgnoreCase) && ar.TextString == axishandle.ToString())
-                    { return br; }
+        //            if (ar.Tag.Equals("POLYHANDLE", StringComparison.OrdinalIgnoreCase) && ar.TextString == axishandle.ToString())
+        //            { return br; }
 
-                }
-            }
-            return null;
-        }
+        //        }
+        //    }
+        //    return null;
+        //}
 
 
         // метод изменения отрибутов блока
@@ -249,129 +249,68 @@ namespace TSODD
         }
 
 
-        // Удалить вхождения конкретного блока по совпадению значения атрибута (TAG = value)
-        public static void DeleteAxisBlock(Axis axis)
-        {
-            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
-            var db = doc.Database;
-            const string blockName = "AXIS_BLOCK"; // имя блока
+        //// Удалить вхождения конкретного блока по совпадению значения атрибута (TAG = value)
+        //public static void DeleteAxisBlock(Axis axis)
+        //{
+        //    var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
+        //    var db = doc.Database;
+        //    const string blockName = "AXIS_BLOCK"; // имя блока
 
-            using (doc.LockDocument())
-            using (var tr = db.TransactionManager.StartTransaction())
-            {
-                // Ищем вхождение блока с нужными атрибутами (по наименованию оси)
-                ObjectId btrId;
-                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+        //    using (doc.LockDocument())
+        //    using (var tr = db.TransactionManager.StartTransaction())
+        //    {
+        //        // Ищем вхождение блока с нужными атрибутами (по наименованию оси)
+        //        ObjectId btrId;
+        //        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-                btrId = bt[blockName];
+        //        btrId = bt[blockName];
 
-                // определение блока
-                var def = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
+        //        // определение блока
+        //        var def = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
 
-                // ищем нужный блок
-                var axisBlockRef = FindAxisBlock(def, tr, axis.PolyHandle);
+        //        // ищем нужный блок
+        //        var axisBlockRef = FindAxisBlock(def, tr, axis.PolyHandle);
 
-                if (axisBlockRef == null) return;
+        //        if (axisBlockRef == null) return;
 
-                try
-                {
-                    axisBlockRef.UpgradeOpen();
-                    if (!axisBlockRef.IsErased) axisBlockRef.Erase();
+        //        try
+        //        {
+        //            axisBlockRef.UpgradeOpen();
+        //            if (!axisBlockRef.IsErased) axisBlockRef.Erase();
 
-                }
-                catch (Autodesk.AutoCAD.Runtime.Exception)
-                {
-                    // при необходимости — лог ex.ErrorStatus
-                }
-                tr.Commit();
-            }
+        //        }
+        //        catch (Autodesk.AutoCAD.Runtime.Exception)
+        //        {
+        //            // при необходимости — лог ex.ErrorStatus
+        //        }
+        //        tr.Commit();
+        //    }
 
-        }
+        //}
 
 
-        // метод получает объекты Axis из атрибутов блока "AXIS_BLOCK"
-        public static List<Axis> GetListOfAxis()
-        {
-            List<Axis> list = new List<Axis>();
 
-            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
-            var db = doc.Database;
-            const string blockName = "AXIS_BLOCK"; // имя блока
 
-            using (doc.LockDocument())
-            using (var tr = db.TransactionManager.StartTransaction())
-            {
-                // Ищем вхождение блока с нужными атрибутами (по наименованию оси)
-                ObjectId btrId;
-                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-                if (!bt.Has(blockName)) return list;
 
-                btrId = bt[blockName];
 
-                // определение блока
-                var def = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
 
-                foreach (ObjectId brId in def.GetBlockReferenceIds(/*directOnly*/ true, /*includeErased*/ false))
-                {
-                    // создаем экземпляр Axis
-                    Axis axis = new Axis();
 
-                    // получаем экземпляр блока
-                    var br = (BlockReference)tr.GetObject(brId, OpenMode.ForRead);
 
-                    // открываем определение, на которое указывает вставка, для проверки Xref
-                    var brDef = (BlockTableRecord)tr.GetObject(br.BlockTableRecord, OpenMode.ForRead);
 
-                    // если это внешняя ссылка (attach/overlay) — пропускаем
-                    if (brDef.IsFromExternalReference || brDef.IsFromOverlayReference)
-                        continue;
 
-                    // Обход атрибутов вставки и создание экземпляра Axis
-                    foreach (ObjectId arId in br.AttributeCollection)
-                    {
-                        var ar = (AttributeReference)tr.GetObject(arId, OpenMode.ForRead);
 
-                        switch (ar.Tag)
-                        {
-                            case "POLYHANDLE":
-                                axis.PolyHandle = new Handle(Convert.ToInt64(ar.TextString, 16));
 
-                                try
-                                {
-                                    axis.PolyID = db.GetObjectId(false, axis.PolyHandle, 0);
-                                    axis.AxisPoly = (Polyline)tr.GetObject(axis.PolyID, OpenMode.ForRead);
-                                }
-                                catch
-                                {
-                                    doc.Editor.WriteMessage("\n * \n Ошибка. Не получилось получить Id полилинии. \n * \n");
-                                }
-                                break;
 
-                            case "AXISNAME": axis.Name = ar.TextString; break;
 
-                            //case "STARTPOINT":
 
-                            //    Double.TryParse(ar.TextString.Split(',')[0], out double x);
-                            //    Double.TryParse(ar.TextString.Split(',')[1], out double y);
-                            //    Double.TryParse(ar.TextString.Split(',')[2], out double z);
 
-                            //    axis.StartPoint = new Point3d(x, y, z);
-                            //    break;
 
-                            case "REVERSE": axis.ReverseDirection = bool.Parse(ar.TextString); break;
 
-                            case "PK": Double.TryParse(ar.TextString, out axis.StartPK); break;
-                        }
-                    }
 
-                    // добавляем ось в список осей
-                    list.Add(axis);
-                }
-            }
 
-            return list;
 
-        }
+
+
 
 
         // метод импортирования блоков с шаблона с настройками атрибутов
@@ -1133,25 +1072,12 @@ namespace TSODD
             var db = doc.Database;
             var ed = doc.Editor;
 
-            // фильтр блоков (смотрим только блоки)
-            var tvs = new TypedValue[] { new TypedValue((int)DxfCode.Start, "INSERT") };
-            var filter = new SelectionFilter(tvs);
-
-            // промпт выбора
-            PromptSelectionOptions pso = new PromptSelectionOptions
-            {
-                MessageForAdding = "\n Выберите блок стойки (можно выбрать рамкой несколько):",
-            };
-
-            // создаем промпт
-            var psr = ed.GetSelection(pso, filter);
-
-            if (psr.Status != PromptStatus.OK) return; // неудачный промпт, выходим
+            var objectIdList = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "INSERT" });
 
             // постфильтр, проверяем есть ли в блоках тег "STAND", порлучем список с Id блоков
-            List<ObjectId> standBlocks = GetBloclListIdByTagFromSelection(db, psr.Value.GetObjectIds(), "STAND");
+            List<ObjectId> standBlocks = GetBloclListIdByTagFromSelection(db, objectIdList, "STAND");
 
-            if (standBlocks.Count == 0) // если не нашли блоки стоек, то выходим
+            if (standBlocks == null || standBlocks.Count == 0) // если не нашли блоки стоек, то выходим
             {
                 ed.WriteMessage("\n Не выбрано ни одного блока стоек \n");
                 return;
@@ -1184,8 +1110,10 @@ namespace TSODD
 
 
         // получает списиок Id блоков из выделения рамкой, которые соответствуют указанному тегу
-        private static List<ObjectId> GetBloclListIdByTagFromSelection(Database db, ObjectId[] selection, string tag)
+        private static List<ObjectId> GetBloclListIdByTagFromSelection(Database db, List<ObjectId> selection, string tag)
         {
+            if (selection == null) return null;
+
             List<ObjectId> result = new List<ObjectId>();
 
             using (var tr = db.TransactionManager.StartTransaction())

@@ -10,6 +10,7 @@ using Autodesk.AutoCAD.Geometry;
 using System.Windows;
 using Autodesk.AutoCAD.Runtime;
 using TSODD;
+using ACAD_test;
 
 namespace TSODD
 {
@@ -123,7 +124,11 @@ namespace TSODD
             // Работа с выбранной полилинией
             using (var tr = doc.TransactionManager.StartTransaction())
             {
-                var poly = tr.GetObject(per.ObjectId, OpenMode.ForRead) as Autodesk.AutoCAD.DatabaseServices.Polyline;
+
+                // приводим полилинию к простой линии
+                RibbonInitializer.MLineTypeToPolyline(per.ObjectId, out var objId);
+
+                var poly = tr.GetObject(objId, OpenMode.ForRead) as Autodesk.AutoCAD.DatabaseServices.Polyline;
                 if (poly != null)
                 {
                     PolyHandle = poly.Handle;

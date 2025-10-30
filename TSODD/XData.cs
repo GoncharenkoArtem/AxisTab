@@ -33,9 +33,8 @@ namespace ACAD_test
 
 
         // метод записывет XData в Entity
-        public static void UpdateXData(ObjectId objId, string axisHandle, string lineHandle = null)
+        public static void UpdateXData(ObjectId objId, List<(int code,string value)> list)
         {
-          
             if (objId.IsNull) throw new ArgumentNullException(nameof(objId));
             var db = objId.Database ?? Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database; // получаем БД объекта
 
@@ -55,16 +54,8 @@ namespace ACAD_test
                         GetAppReg(tr, entDb);
 
                         // создаем буфер для записи XData
-                        ResultBuffer buff = new ResultBuffer {
-                            new TypedValue ((int)DxfCode.ExtendedDataRegAppName, AppName),
-                            new TypedValue ((int)DxfCode.ExtendedDataHandle, axisHandle)
-                            };
-
-                        // если есть Handle привязки к другой линии (для мультилинии)
-                        if (lineHandle != null)
-                        {
-                            buff.Add(new TypedValue((int)DxfCode.ExtendedDataHandle, lineHandle));
-                        }
+                        ResultBuffer buff = new ResultBuffer { new TypedValue((int)DxfCode.ExtendedDataRegAppName, AppName) };
+                        if (list != null) foreach (var val in list) buff.Add(new TypedValue(val.code, val.value));
 
                         // обновляем XData
                         ent.XData = AddXDataSection(ent.XData, buff);
@@ -74,7 +65,6 @@ namespace ACAD_test
                 }
             }
         }
-
 
 
         // метод добавляет / обновляет секцию XData, не трогая старые секции
@@ -110,9 +100,9 @@ namespace ACAD_test
 
 
         // метод считывает XData у объекта 
-        public static List<string> ReadXData(ObjectId objId)
+        public static List<(int,string)> ReadXData(ObjectId objId)
         {
-            List<string> result = new List<string>();
+            List<(int, string)> result = new List<(int, string)>();
 
             if (objId.IsNull) throw new ArgumentNullException(nameof(objId));
             var db = objId.Database ?? Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database; // получаем БД объекта
@@ -122,7 +112,7 @@ namespace ACAD_test
                 Entity ent = (Entity)tr.GetObject(objId, OpenMode.ForRead);
                 ResultBuffer buff = ent.XData;
 
-                if (buff ==null) return result;
+                if (buff == null) return result;
 
                 var arr = buff.AsArray();
 
@@ -132,7 +122,7 @@ namespace ACAD_test
                     {
                         i++;
                         while (i < arr.Length && arr[i].TypeCode != (int)DxfCode.ExtendedDataRegAppName)
-                        { result.Add(arr[i].Value.ToString()); i++; }    // Добавляем XData в List
+                        { result.Add((arr[i].TypeCode, arr[i].Value.ToString())); i++; }    // Добавляем XData в List
 
                         break;
                     }
@@ -140,6 +130,109 @@ namespace ACAD_test
             }
             return result;
         }
+    }
+
+
+
+
+
+    // перечисление типов объектов Tsodd
+    public enum TsoddElement { Line, Mline, Axis }
+
+    /// <summary>
+    ///  Класс для быстрой идентификации элементов Tsodd и парсинга их Xdata
+    /// </summary>
+    public class TsoddXdataElement
+    {
+        public TsoddElement Type {  get; set; }
+        public ObjectId MasterPolylineID { get; set; } = ObjectId.Null;
+        public ObjectId SlavePolylineID { get; set; } = ObjectId.Null;
+        public ObjectId MtextID {  get; set; } = ObjectId.Null;
+        public ObjectId AxisPolylineID { get; set; } = ObjectId.Null;
+        List<(int code, string value)> ListXdata { get; set; } = new List<(int code, string value)>();
+
+        public void Parse(ObjectId objectId)
+        {
+            ListXdata = AutocadXData.ReadXData(objectId); 
+            if (ListXdata.Count==0) { return; } //  пуостая XData
+
+            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            var ed = doc.Editor;
+
+            Handle tempHandle;
+
+            using (doc.LockDocument())
+            {
+                using (var tr = db.TransactionManager.StartTransaction())
+                {
+
+                    switch (ListXdata[0].value)
+                    {
+                        case "axis":
+                            Type = TsoddElement.Axis;
+
+                            tempHandle = new Handle(Convert.ToInt64(ListXdata[1].value, 16));
+                            AxisPolylineID = db.GetObjectId(false, tempHandle, 0);
+
+                            break;
+
+                        case "master":
+
+                            MasterPolylineID = objectId;
+
+                            tempHandle = new Handle(Convert.ToInt64(ListXdata[3].value, 16));               // handle slave полилинии
+
+                            if (!string.Equals(tempHandle.ToString(), "0"))                                 // мультилиния
+                            {
+                                SlavePolylineID = db.GetObjectId(false, tempHandle, 0);                    // Id slave полилинии
+                                Type = TsoddElement.Mline;
+                            }
+                            else
+                            {
+                                Type = TsoddElement.Line;
+                            }
+
+                            tempHandle = new Handle(Convert.ToInt64(ListXdata[4].value, 16));               // handle mtext
+                            MtextID = db.GetObjectId(false, tempHandle, 0);                                 // Id mtext
+
+                            break;
+
+                        case "slave":
+
+                            tempHandle = new Handle(Convert.ToInt64(ListXdata[1].value, 16));               // handle master полилинии
+                            MasterPolylineID = db.GetObjectId(false, tempHandle, 0);                        // Id master полилинии
+
+                            // читаем Xdata у мастер полилинии и берем данные уже из master полилинии
+                            ListXdata = AutocadXData.ReadXData(MasterPolylineID);
+
+                            tempHandle = new Handle(Convert.ToInt64(ListXdata[3].value, 16));               // handle slave полилинии
+
+                            if (!string.Equals(tempHandle.ToString(), "0"))                                 // мультилиния
+                            {
+                                SlavePolylineID = db.GetObjectId(false, tempHandle, 0);                    // Id slave полилинии
+                                Type = TsoddElement.Mline;
+                            }
+                            else
+                            {
+                                Type = TsoddElement.Line;
+                            }
+
+                            tempHandle = new Handle(Convert.ToInt64(ListXdata[4].value, 16));               // handle mtext
+                            MtextID = db.GetObjectId(false, tempHandle, 0);                                 // Id mtext
+
+                            break;
+                    }
+                }
+            }
+ 
+        }
+
+
+
+
+
+
 
     }
 }

@@ -31,22 +31,19 @@ namespace ACAD_test
         private RibbonSplitButton splitStands = new RibbonSplitButton();
         private RibbonSplitButton splitSigns = new RibbonSplitButton();
         public RibbonSplitButton splitMarksLineTypes = new RibbonSplitButton();
-        public RibbonCombo comboLineTypePattern_1 = new RibbonCombo();
-        public RibbonCombo comboLineTypePattern_2 = new RibbonCombo();
-        public RibbonCombo comboLineTypeWidth_1 = new RibbonCombo();
-        public RibbonCombo comboLineTypeWidth_2 = new RibbonCombo();
-        public RibbonCombo comboLineTypeColor_1 = new RibbonCombo();
-        public RibbonCombo comboLineTypeColor_2 = new RibbonCombo();
-        public RibbonCombo comboLineTypeOffset = new RibbonCombo();
+
+        public RibbonRowPanel rowLineType = new RibbonRowPanel();
+        private RibbonCombo comboLineTypePattern_1 = new RibbonCombo();
+        private RibbonCombo comboLineTypePattern_2 = new RibbonCombo();
+        private RibbonCombo comboLineTypeWidth_1 = new RibbonCombo();
+        private RibbonCombo comboLineTypeWidth_2 = new RibbonCombo();
+        private RibbonCombo comboLineTypeColor_1 = new RibbonCombo();
+        private RibbonCombo comboLineTypeColor_2 = new RibbonCombo();
+        private RibbonCombo comboLineTypeOffset = new RibbonCombo();
+        private RibbonLabel labelLineType = new RibbonLabel(); 
 
 
-
-
-
-
-        private RibbonSplitButton splitMarks = new RibbonSplitButton();
-
-
+        //  private RibbonSplitButton splitMarks = new RibbonSplitButton();
 
 
         public RibbonPanelSource panelSourceMarks;
@@ -55,6 +52,9 @@ namespace ACAD_test
 
         private static readonly HashSet<IntPtr> _dbIntPtr = new HashSet<IntPtr>();
         private readonly HashSet<ObjectId> _dontDeleteMe = new HashSet<ObjectId>();
+        private readonly HashSet<ObjectId> _deleteMe = new HashSet<ObjectId>();
+
+        private bool _marksLineTypeFlag = true;
 
 
         public void Initialize()
@@ -137,7 +137,9 @@ namespace ACAD_test
                 InitializeSplitButtons(splitSigns, "Знаки");
                 // заполняем 
                 FillBlocksMenu(splitSigns, "SIGN", TsoddHost.Current.currentSignGroup);
-
+                // обновляем  элементы LineType
+                ListOfMarksLinesLoad(200, 20);
+                LineTypeReader.RefreshLineTypesInAcad();
             }
         }
 
@@ -498,7 +500,8 @@ namespace ACAD_test
             panelSourceMarks.Items.Add(splitMarksLineTypes);
 
             // типы линий
-            var rowLineType = new RibbonRowPanel();
+            //rowLineType = new RibbonRowPanel();
+            
             // первый тип линии
             var rowLineType_1 = new RibbonRowPanel();
             comboLineTypePattern_1.Width = 105;
@@ -533,7 +536,9 @@ namespace ACAD_test
             rowLineType.Items.Add(new RibbonRowBreak());
             // расстояние между линиями
             var rowLineType_3 = new RibbonRowPanel();
-            rowLineType_3.Items.Add(new RibbonLabel { Text = "расстояние между линиями", Width=159 });
+            labelLineType.Text = "расстояние между линиями";
+            labelLineType.Width = 159;
+            rowLineType_3.Items.Add(labelLineType);
             comboLineTypeOffset.Width = 46;
             comboLineTypeOffset.MinWidth = 46;
             rowLineType_3.Items.Add(comboLineTypeOffset);
@@ -551,8 +556,8 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    ListOfMarksLinesLoad(200,20);
-                    LineTypeReader.Test();
+                   // ListOfMarksLinesLoad(200,20);
+                   // LineTypeReader.Test();
                    
                 })
             };
