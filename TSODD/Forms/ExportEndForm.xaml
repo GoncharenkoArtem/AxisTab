@@ -1,26 +1,27 @@
-﻿<Window x:Class="TSODD.wwindow"
+﻿<Window x:Class="TSODD.ExportEnd"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TSODD"
         mc:Ignorable="d"
-        Width="600" Height="400">
-        <!--Title="MainWindow" WindowStyle="None"
+        Width="400" Height="400"
         ResizeMode="NoResize"
         AllowsTransparency="True"
         Background="Transparent"
         ShowInTaskbar="False"
         Topmost="True"
-        WindowStartupLocation="CenterScreen"-->
+        WindowStyle="None">
+
 
     <Grid>
+        <Canvas x:Name="endExportCanvas">
+            <Image x:Name="cock_image"></Image >
+            <Image x:Name="cloud_image" ></Image >
+            <TextBlock x:Name="text_textblock" Background="Transparent" FontSize="25" FontFamily="Comic Sans MS" Width="180" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+        </Canvas>
 
-        <Button Click="Button_Click"></Button>
-        
-        
-        
     </Grid>
-  
+
 
 </Window>

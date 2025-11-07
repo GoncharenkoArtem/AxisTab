@@ -1,39 +1,25 @@
 ﻿
-using System;
-using System.Drawing;
-using System.Windows;
-
-using System.Windows.Media.Imaging;
-using ACAD = Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
-
-using System.Collections.Generic;
-using System.Windows.Interop;
-using System.Runtime.InteropServices;
-using Autodesk.AutoCAD.EditorInput;
-using System.IO;
-using System.Reflection;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using System.Windows.Documents;
-using System.Windows.Controls;
-using System.Security.Cryptography;
-using System.Xml.Linq;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.Interop;
-using static System.Net.Mime.MediaTypeNames;
-using Autodesk.AutoCAD.Interop.Common;
 using ACAD_test;
-using System.Security.Policy;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.GraphicsSystem;
-using System.Diagnostics;
-using System.Windows.Media.Media3D;
-using Autodesk.AutoCAD.DatabaseServices.Filters;
-using System.Text.RegularExpressions;
-using Autodesk.AutoCAD.Windows.Data;
-using System.Windows.Media;
+using Autodesk.AutoCAD.Internal.DatabaseServices;
+using System;
+using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Drawing;
+using System.IO;
 using System.Linq;
-using Autodesk.Windows;
+using System.Reflection;
+using System.Runtime.InteropServices;
+using System.Security.Policy;
+using System.Windows;
+using System.Windows.Interop;
+using System.Windows.Media.Imaging;
+using TSODD.forms;
+using ACAD = Autodesk.AutoCAD.ApplicationServices;
 //using System.Windows.Forms;
 
 
@@ -43,57 +29,25 @@ namespace TSODD
 {
     internal static class TsoddBlock
     {
-        private static string dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        private static string dwgPath = Path.Combine(dllPath, "Support","blocks.dwg");
+       
         public static bool blockInsertFlag = true;
 
-
-        //// метод проверяет существует ли блок "AXIS_BLOCK", если его нет, то создает
-        //private static void CreateBlock()
-        //{
-        //    var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
-        //    var db = doc.Database;
-        //    const string blockName = "AXIS_BLOCK"; // имя блока
-
-        //    using (var tr = db.TransactionManager.StartTransaction())
-        //    {
-        //        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-
-        //        //ObjectId btrId;
-        //        if (bt.Has(blockName)) return;
-
-        //        // Создаём пустое определение блока
-        //        bt.UpgradeOpen();
-        //        var btr = new BlockTableRecord { Name = blockName };
-        //        bt.Add(btr);
-        //        tr.AddNewlyCreatedDBObject(btr, true);
-
-        //        // Добавляем невидимые атрибуты 
-        //        AddHiddenAttr(btr, tr, tag: "POLYHANDLE", prompt: "Handle полилинии оси", defaultValue: "", 0);
-        //        AddHiddenAttr(btr, tr, tag: "AXISNAME", prompt: "Наименование оси", defaultValue: "", 1);
-        //        //AddHiddenAttr(btr, tr, tag: "STARTPOINT", prompt: "Начальная точка", defaultValue: "", 2);
-        //        AddHiddenAttr(btr, tr, tag: "REVERSE", prompt: "Реверсивное направление", defaultValue: "", 3);
-        //        AddHiddenAttr(btr, tr, tag: "PK", prompt: "Начальный пикет", defaultValue: "", 4);
-
-        //        tr.Commit();
-        //    }
-        //}
-
-
         // метод создания нового атрибута
-        private static void AddHiddenAttr(BlockTableRecord btr, Transaction tr, string tag, string prompt, string defaultValue, int numberOfAttrr, double height = 2.5)
+        private static void AddAttributeToBlock(BlockTableRecord btr, Transaction tr, string tag, string prompt,
+                                                string defaultValue, Point3d insertPoint, int numberOfAttr = 0,
+                                                double height = 2.5, bool visible = false, bool inVisible = true, bool lockedPosition = true)
         {
             var ad = new AttributeDefinition
             {
-                Position = new Point3d(0, -numberOfAttrr * 2.5, 0),
+                Position = insertPoint == Point3d.Origin ? new Point3d(0, -numberOfAttr * 2.5, 0) : insertPoint,
                 Tag = tag.ToUpperInvariant(),
                 Prompt = prompt ?? string.Empty,
                 TextString = defaultValue ?? string.Empty,
                 Height = height,
-                Invisible = true,
-                Visible = false,
+                Invisible = inVisible,
+                Visible = visible,
                 Constant = false,
-                LockPositionInBlock = true
+                LockPositionInBlock = lockedPosition
             };
 
             btr.AppendEntity(ad);
@@ -101,88 +55,8 @@ namespace TSODD
         }
 
 
-        //// метод проверяет, существует ли определение блока по имени блока, и создает либо обновляет его (атрибуты)
-        //public static void AddAxisBlock(Axis axis)
-        //{
-        //    var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
-        //    var db = doc.Database;
-        //    const string blockName = "AXIS_BLOCK"; // имя блока
-
-        //    using (ACAD.DocumentLock docLock = doc.LockDocument()) // Блокируем документ
-        //    {
-        //        // проверяем есть ли блок в реестре, если нет, то создаем его
-        //        CreateBlock();
-
-        //        // Ищем вхождение блока с нужными атрибутами (по наименованию оси)
-        //        using (var tr = db.TransactionManager.StartTransaction())
-        //        {
-        //            // ищем Id блока
-        //            ObjectId btrId;
-        //            var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-
-        //            btrId = bt[blockName];
-
-        //            // определение блока
-        //            var def = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
-
-        //            // ищем нужный блок
-        //            var axisBlockRef = FindAxisBlock(def, tr, axis.PolyHandle);
-
-        //            if (axisBlockRef == null) // если не нашли, то вставляем новый блок в 0 
-        //            {
-        //                var ms = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-        //                axisBlockRef = new BlockReference(Point3d.Origin, btrId);
-        //                ms.AppendEntity(axisBlockRef);
-        //                tr.AddNewlyCreatedDBObject(axisBlockRef, true);
-
-        //                SetAttrValues(axisBlockRef, tr);
-        //            }
-
-        //            // заполняем/обновляем атрибуты блока
-        //            ChangeAttribute(tr, axisBlockRef, "POLYHANDLE", axis.PolyHandle.ToString());
-        //            ChangeAttribute(tr, axisBlockRef, "AXISNAME", axis.Name);
-        //            //ChangeAttribute(tr, axisBlockRef, "STARTPOINT", $"{axis.StartPoint.X},{axis.StartPoint.Y},{axis.StartPoint.Z}");
-        //            ChangeAttribute(tr, axisBlockRef, "REVERSE", axis.ReverseDirection.ToString());
-        //            ChangeAttribute(tr, axisBlockRef, "PK", axis.StartPK.ToString());
-
-        //            tr.Commit();
-
-        //        }
-        //    }
-        //}
-
-
-        //// метод поиска нужного блока по Handle
-        //private static BlockReference FindAxisBlock(BlockTableRecord def, Transaction tr, Handle axishandle)
-        //{
-        //    foreach (ObjectId brId in def.GetBlockReferenceIds(/*directOnly*/ true, /*includeErased*/ false))
-        //    {
-        //        // получаем экземпляр блока
-        //        var br = (BlockReference)tr.GetObject(brId, OpenMode.ForRead);
-
-        //        // открываем определение, на которое указывает вставка, для проверки Xref
-        //        var brDef = (BlockTableRecord)tr.GetObject(br.BlockTableRecord, OpenMode.ForRead);
-
-        //        // если это внешняя ссылка (attach/overlay) — пропускаем
-        //        if (brDef.IsFromExternalReference || brDef.IsFromOverlayReference)
-        //            continue;
-
-        //        // Обход атрибутов вставки 
-        //        foreach (ObjectId arId in br.AttributeCollection)
-        //        {
-        //            var ar = (AttributeReference)tr.GetObject(arId, OpenMode.ForRead);
-
-        //            if (ar.Tag.Equals("POLYHANDLE", StringComparison.OrdinalIgnoreCase) && ar.TextString == axishandle.ToString())
-        //            { return br; }
-
-        //        }
-        //    }
-        //    return null;
-        //}
-
-
         // метод изменения отрибутов блока
-        private static void ChangeAttribute(Transaction tr, BlockReference br, string tag, string value)
+        public static void ChangeAttribute(Transaction tr, BlockReference br, string tag, string value)
         {
             // Обход атрибутов вставки 
             foreach (ObjectId arId in br.AttributeCollection)
@@ -195,7 +69,6 @@ namespace TSODD
         // метод добавления атрибутов в новый блок
         private static void SetAttrValues(BlockReference br, Transaction tr, Dictionary<string, string> tagList = null)
         {
-
             // Текущий масштаб аннотаций
             var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
@@ -224,9 +97,32 @@ namespace TSODD
                     }
 
                     // добавляем аннатотивность в атрибут
-                    if (ad.Annotative == AnnotativeStates.True || btr.Annotative == AnnotativeStates.True || br.Annotative == AnnotativeStates.True)
+                    if (!ar.Invisible)
                     {
-                        if (!ar.Invisible) ar.AddContext(cur);
+                        // пользовательские настройки
+                        var userOptions = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath);
+
+                        // Получаем таблицу текстовых стилей
+                        TextStyleTable textStyleTable = (TextStyleTable)tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
+
+                        // Перебираем все стили
+                        foreach (ObjectId styleId in textStyleTable)
+                        {
+                            TextStyleTableRecord styleRecord = (TextStyleTableRecord)tr.GetObject(styleId, OpenMode.ForRead);
+                            if (!string.IsNullOrEmpty(styleRecord.Name) && styleRecord.Name == userOptions.BlockNameTextStyle) ar.TextStyleId = styleId;
+                        }
+                         
+                        if (ad.Annotative == AnnotativeStates.True || btr.Annotative == AnnotativeStates.True || br.Annotative == AnnotativeStates.True)
+                        {
+                            ar.AddContext(cur);
+                            ar.Height = userOptions.BlockNameTextHeight * cur.DrawingUnits;
+                            ar.Position = new Point3d(ar.Position.X, ar.Position.Y - ar.Height / 2, 0);
+                        } 
+                        else
+                        {
+                            ar.Height = userOptions.BlockNameTextHeight;
+                            ar.Position = new Point3d(ar.Position.X, ar.Position.Y - ar.Height / 2, 0);
+                        }
                     }
 
                     br.AttributeCollection.AppendAttribute(ar);
@@ -249,70 +145,6 @@ namespace TSODD
         }
 
 
-        //// Удалить вхождения конкретного блока по совпадению значения атрибута (TAG = value)
-        //public static void DeleteAxisBlock(Axis axis)
-        //{
-        //    var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
-        //    var db = doc.Database;
-        //    const string blockName = "AXIS_BLOCK"; // имя блока
-
-        //    using (doc.LockDocument())
-        //    using (var tr = db.TransactionManager.StartTransaction())
-        //    {
-        //        // Ищем вхождение блока с нужными атрибутами (по наименованию оси)
-        //        ObjectId btrId;
-        //        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-
-        //        btrId = bt[blockName];
-
-        //        // определение блока
-        //        var def = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
-
-        //        // ищем нужный блок
-        //        var axisBlockRef = FindAxisBlock(def, tr, axis.PolyHandle);
-
-        //        if (axisBlockRef == null) return;
-
-        //        try
-        //        {
-        //            axisBlockRef.UpgradeOpen();
-        //            if (!axisBlockRef.IsErased) axisBlockRef.Erase();
-
-        //        }
-        //        catch (Autodesk.AutoCAD.Runtime.Exception)
-        //        {
-        //            // при необходимости — лог ex.ErrorStatus
-        //        }
-        //        tr.Commit();
-        //    }
-
-        //}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         // метод импортирования блоков с шаблона с настройками атрибутов
         private static void InsertBlockByNameWithTags(Point3d insertPoint, string name, Dictionary<string, string> tags)
         {
@@ -320,9 +152,11 @@ namespace TSODD
             var db = doc.Database;
             var ed = doc.Editor;
 
+            ObjectIdCollection oldOrder = null;
+
             using (var blockDb = new Database(false, true))     // новая пустая база
             {
-                blockDb.ReadDwgFile(dwgPath, FileShare.Read, true, "");     // считываем в базу файл по указанному пути
+                blockDb.ReadDwgFile(FilesLocation.dwgBlocksPath, FileShare.Read, true, "");     // считываем в базу файл по указанному пути
 
                 using (var trExt = blockDb.TransactionManager.StartTransaction())
                 {
@@ -337,6 +171,9 @@ namespace TSODD
                     }
 
                     var extBtrId = btExt[name];
+                    BlockTableRecord extBtr = (BlockTableRecord)trExt.GetObject(extBtrId, OpenMode.ForRead);
+                    DrawOrderTable drawOrderTableOld = (DrawOrderTable)trExt.GetObject(extBtr.DrawOrderTableId, OpenMode.ForRead);
+                    oldOrder = drawOrderTableOld.GetFullDrawOrder(0);
 
                     // Импортируем определение блока в текущий чертёж
                     using (doc.LockDocument())
@@ -355,9 +192,19 @@ namespace TSODD
                         false
                         );
 
+
                         // Получаем ObjectId склонированного (или существующего) определения в текущей БД
                         var pair = mapping[extBtrId];
                         var destBtrId = pair.Value;
+
+                        BlockTableRecord destBtr = (BlockTableRecord)tr.GetObject(destBtrId, OpenMode.ForWrite);
+
+                        // аннатотивность блока
+                        var userOptions = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath); 
+                        destBtr.Annotative = userOptions.BlocksAnnotativeState? AnnotativeStates.True : AnnotativeStates.False;
+
+                        // Сихронизируем порядок отрисовки элементов в блоках
+                        SyncDrawOrder(oldOrder, destBtr, mapping, tr);
 
                         blockInsertFlag = false;
 
@@ -365,19 +212,22 @@ namespace TSODD
                         var ms = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
                         var br = new BlockReference(insertPoint, destBtrId);
 
+
+
                         ms.AppendEntity(br);
                         tr.AddNewlyCreatedDBObject(br, true);
 
-
-
-                        var ocm = db.ObjectContextManager;
-                        var occ = ocm.GetContextCollection("ACDB_ANNOTATIONSCALES");
-
-                        // Текущий масштаб CANNOSCALE
-                        var curSC = occ.CurrentContext as AnnotationScale;
-                        if (curSC != null && !br.HasContext(curSC))
-
+                        // масштаб аннотаций
+                        if (userOptions.BlocksAnnotativeState)
+                        {
+                            var ocm = db.ObjectContextManager;
+                            var occ = ocm.GetContextCollection("ACDB_ANNOTATIONSCALES");
+                            // Текущий масштаб CANNOSCALE
+                            var curSC = occ.CurrentContext as AnnotationScale;
+                            if (curSC != null && !br.HasContext(curSC))
                             br.AddContext(curSC);   // добавляем масштаб в блок
+
+                        }
 
                         // заполняем атрибуты
                         SetAttrValues(br, tr, tags);
@@ -394,7 +244,7 @@ namespace TSODD
         }
 
         // метод вставки блока стойки
-        public static void InsertStandBlock(string name)
+        public static void InsertStandOrMarkBlock(string name)
         {
 
             if (blockInsertFlag == false) return;
@@ -433,7 +283,6 @@ namespace TSODD
 
             // вставляем блок стойки
             InsertBlockByNameWithTags(ppo.Value, name, tagList);
-
         }
 
 
@@ -446,6 +295,8 @@ namespace TSODD
 
             // соберем все блоки стоек в отдельный словарь где будут точки вставки и ID блока
             Dictionary<ObjectId, Point3d> standBlocks = new Dictionary<ObjectId, Point3d>();
+            var userOptions = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath);
+
 
             // последний подсвеченный блок
             ObjectId lastHighlightedId = ObjectId.Null;
@@ -498,9 +349,8 @@ namespace TSODD
                 Point3d ucsPt = e.Context.ComputedPoint;
                 Point3d cursorWcs = ucsPt.TransformBy(ed.CurrentUserCoordinateSystem.Inverse());  // текущее положение курсора
 
-                double maxRadius = 5000;    // максимальный радиус поиска
-                if (db.Insunits == UnitsValue.Meters) maxRadius = 5; // если в чертеже размерность в метрах, то меняем радиус поиска стойки
-
+                double maxRadius = db.Insunits == UnitsValue.Meters? userOptions.BlockBindRadius : userOptions.BlockBindRadius * 1000;    // максимальный радиус поиска
+        
                 ObjectId matchBlockID = ObjectId.Null;
                 double distance = double.MaxValue;
 
@@ -516,7 +366,6 @@ namespace TSODD
 
                 // подсветка
                 SetHighlight(matchBlockID);
-
             }
 
             // подсветка вкл/выкл 
@@ -559,12 +408,10 @@ namespace TSODD
                         {
                             using (var tr = db.TransactionManager.StartTransaction())
                             {
-
-                                var bref = (BlockReference)tr.GetObject(lastHighlightedId, OpenMode.ForWrite);
-
+                                var bref = (BlockReference)tr.GetObject(lastHighlightedId, OpenMode.ForRead);
                                 var tagList = new Dictionary<string, string> { ["STANDHANDLE"] = bref.Handle.ToString() };
+                                // вставляем блок
                                 InsertBlockByNameWithTags(ppr.Value, name, tagList);
-
                                 tr.Commit();
                             }
                         }
@@ -580,15 +427,18 @@ namespace TSODD
 
                             if (!lastHighlightedId.IsNull)
                             {
-                                using (var tr = db.TransactionManager.StartTransaction())
+                                using (doc.LockDocument())
                                 {
-                                    var bref = (BlockReference)tr.GetObject(lastHighlightedId, OpenMode.ForRead);
-                                    var tagList = new Dictionary<string, string> { ["STANDHANDLE"] = bref.Handle.ToString() };
+                                    using (var tr = db.TransactionManager.StartTransaction())
+                                    {
+                                        var bref = (BlockReference)tr.GetObject(lastHighlightedId, OpenMode.ForRead);
+                                        var tagList = new Dictionary<string, string> { ["STANDHANDLE"] = bref.Handle.ToString() };
 
-                                    // вставляем блок
-                                    InsertBlockByNameWithTags(ppr.Value, name, tagList);
-                                    tr.Commit();
+                                        // вставляем блок
+                                        InsertBlockByNameWithTags(ppr.Value, name, tagList);
+                                        tr.Commit();
 
+                                    }
                                 }
                                 return; // успех
                             }
@@ -608,266 +458,296 @@ namespace TSODD
 
         //  **************************************************************   ADD / DELETE  BLOCKS   **************************************************************    //
 
+
         // метод загрузки блока в базу
-        public static string AddBlockToBD(string templateName)
+        public static void AddBlockToBD(string templateName, BlockTableRecord intBtr, string intBlockName, string intBlockNumber,
+            ObservableCollection<DataGridValue> collection, List<ObjectId> deleteObjects,
+            Extents3d extents, Bitmap blockIcon, bool singleSign, string groupName)
         {
-            string blockName = null;
+            RibbonInitializer.Instance.readyToDeleteEntity = false; // запрещаем анализировать объекты при удалении
 
-            string intBlockName = string.Empty;
-            ObjectIdCollection idsToClone = null;
+            ObjectIdCollection idsToCloneOriginalBlock = new ObjectIdCollection();
+            ObjectIdCollection idsToCloneTemplateBlock = new ObjectIdCollection();
 
-            double entityWidth = 0;     // переменная для отслеживания ширины всех примитивов блока
-            double entityHeight = 0;    // переменная для отслеживания высоты всех примитивов блока
-            double minX = 0;            // переменная для ослеживания начального X примитивов блока
-            double minY = 0;            // переменная для ослеживания начального Y примитивов блока
-
+            ObjectIdCollection oldOrder = null;
 
             var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
 
-            // промпт выбора исходного блока 
-            PromptEntityOptions peo = new PromptEntityOptions("\n Выберите блок для экспорта в БД (Esc - выход):");
-            peo.SetRejectMessage(" \n Выбранный элемент должен быть блоком");
-            peo.AddAllowedClass(typeof(BlockReference), exactMatch: false);
-            var res = ed.GetEntity(peo);
-
-            if (res.Status != PromptStatus.OK) return null; // если пользователь отменил промпт то выходим
-
-            ObjectId intBtrId = res.ObjectId;
-
-            Bitmap blockbmp;
+            Database templateDb = null;
+            Database blocksDb = null;
+            ObjectId templateId;
+            ObjectId blockBtrId;
+            BlockTableRecord blockBtr;
 
             try
             {
-                // берем данные с исходного блока
                 using (doc.LockDocument())
                 {
+                    // берем данные с исходного блока
                     using (var tr = db.TransactionManager.StartTransaction())
                     {
-                        // получаем экземпляр блока
-                        var intBr = (BlockReference)tr.GetObject(intBtrId, OpenMode.ForRead);
-
-                        // если блок динамический — берем базовое определение
-                        ObjectId defId = intBr.IsDynamicBlock
-                            ? intBr.DynamicBlockTableRecord
-                            : intBr.BlockTableRecord;
-
-                        // открываем определение, на которое указывает вставка, для проверки Xref
-                        var intBtr = (BlockTableRecord)tr.GetObject(defId, OpenMode.ForRead);
-
-                        // имя исходного блока
-                        intBlockName = intBtr.Name;
-
-                        // Id исходного блока
-                        intBtrId = intBtr.ObjectId;
-
-                        // копируем сущности из исходного блока 
-                        idsToClone = new ObjectIdCollection();
-                        foreach (ObjectId id in intBtr)
+                        // просто возьмем все элементы исходного блока
+                        idsToCloneOriginalBlock = new ObjectIdCollection { intBtr.ObjectId };
+                        
+                        // Сохраняем draw order, пока Table ещё в транзакции
+                        if (!intBtr.DrawOrderTableId.IsNull)
                         {
-                            var dbo = tr.GetObject(id, OpenMode.ForRead);
-                            if (dbo is AttributeDefinition) continue;           // кроме атрибутов
-                            if (dbo is DBText || dbo is MText) continue;        // кроме текста и Мтекста
-                            if (dbo.GetType().FullName == "Autodesk.AutoCAD.DatabaseServices.MTextAttributeDefinition") continue;
-
-                            if (dbo is Entity) idsToClone.Add(id);
+                            var drawOrderTableOld = (DrawOrderTable)tr.GetObject(intBtr.DrawOrderTableId, OpenMode.ForRead);
+                            oldOrder = drawOrderTableOld.GetFullDrawOrder(0);
                         }
-
-                        // временный блок для картинки
-                        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-                        var tempBtr = new BlockTableRecord();
-                        tempBtr.Name = "tempBlockForPreviewIcon"; // анонимное имя, чтобы не конфликтовать
-
-                        ObjectId tempBtrId = bt.Add(tempBtr);
-                        tr.AddNewlyCreatedDBObject(tempBtr, true);
-
-                        var tempMap = new IdMapping();
-                        db.DeepCloneObjects(idsToClone, tempBtrId, tempMap, false);
-
-                        // генерим картинку bmp для previewIcon заодно понимаем положение примитивов
-                        blockbmp = GetBlockBitmap(tempBtrId, out entityWidth, out entityHeight, out minX, out minY, 32);
-
-                        tempBtr.UpgradeOpen();
-                        tempBtr.Erase(true);
 
                     }
                 }
 
                 // копируем шаблон из файла с блоками, шаманим с ним и сохраняем под новым именем
-                using (var extDb = new Database(false, true))
+                // Открываем DWG с шаблонами
+                templateDb = new Database(false, true);
+                templateDb.ReadDwgFile(FilesLocation.dwgTemplatePath, FileShare.None, false, "");
+                templateDb.CloseInput(true);
+
+                // Открываем внешний DWG с блоками
+                blocksDb = new Database(false, true);
+                blocksDb.ReadDwgFile(FilesLocation.dwgBlocksPath, FileShare.None, false, "");
+                blocksDb.CloseInput(true);
+
+                // Находим шаблон в внешней БД
+                using (var trForTemplate = templateDb.TransactionManager.StartTransaction())
                 {
-
-                    // Открываем внешний DWG для записи
-                    extDb.ReadDwgFile(dwgPath, FileShare.None, false, "");
-                    extDb.CloseInput(true);
-
-                    // Находим шаблон в внешней БД
-                    ObjectId tplId;
-                    using (var trExt = extDb.TransactionManager.StartTransaction())
+                    // проверка наличия шаблона
+                    var btExt = (BlockTable)trForTemplate.GetObject(templateDb.BlockTableId, OpenMode.ForRead);
+                    if (!btExt.Has(templateName))
                     {
-                        // проверка наличия шаблона
-                        var btExt = (BlockTable)trExt.GetObject(extDb.BlockTableId, OpenMode.ForRead);
-                        if (!btExt.Has(templateName))
-                        {
-                            ed.WriteMessage($"\nВ БД не найден шаблон \"{templateName}\".");
-                            return null;
-                        }
-
-                        tplId = btExt[templateName];
-
-                        // проверка имени добавляемого блока в БД
-                        if (btExt.Has(intBlockName))
-                        {
-                            // спрашиваем заменить ли определение блока или выход
-                            PromptKeywordOptions pso = new PromptKeywordOptions("\n Такой блок уже есть в БД. Переопределить его?: ");
-                            pso.Keywords.Add("Да");
-                            pso.Keywords.Add("Нет");
-                            pso.AllowArbitraryInput = false;
-
-                            PromptResult pres = ed.GetKeywords(pso);
-
-                            if (pres.StringResult != "Да")  // выходим, если не хотим переопределить блок
-                            {
-                                trExt.Abort();
-                                return null;
-                            }
-                        }
-                        trExt.Commit();
+                        ed.WriteMessage($"\nВ БД не найден шаблон \"{templateName}\".");
+                        RibbonInitializer.Instance.readyToDeleteEntity = true; // разрешаем анализировать объекты при удалении
+                        return;
                     }
 
-                    // Клонируем шаблон во временную БД
-                    using (var tmpDb = new Database(true, true))
-                    {
-                        var tempMap = new IdMapping();
-                        extDb.WblockCloneObjects(
-                            new ObjectIdCollection(new[] { tplId }),
-                            tmpDb.BlockTableId,
-                            tempMap,
-                            DuplicateRecordCloning.MangleName, // создаст копию записи блока
-                            false
-                        );
+                    templateId = btExt[templateName];   // id блока шаблона
+                    var templateBtr = (BlockTableRecord)trForTemplate.GetObject(templateId, OpenMode.ForRead);
 
-                        // Получаем id клона в temp
-                        ObjectId tmpBtrId = ObjectId.Null;
-                        foreach (IdPair p in tempMap)
-                            if (p.Key == tplId) { tmpBtrId = p.Value; break; }
+                    //  копируем все элементы шаблона в коллекцию
+                    foreach (ObjectId id in templateBtr) idsToCloneTemplateBlock.Add(id);
 
-
-                        // Переименовываем клон в temp в целевое имя
-                        using (var trTmp = tmpDb.TransactionManager.StartTransaction())
-                        {
-                            var btTmp = (BlockTable)trTmp.GetObject(tmpDb.BlockTableId, OpenMode.ForWrite);
-                            var tmpBtr = (BlockTableRecord)trTmp.GetObject(tmpBtrId, OpenMode.ForWrite);
-                            tmpBtr.Name = intBlockName;
-                            trTmp.Commit();
-                        }
-
-                        // Клонируем блок из временной БД во внешнюю БД
-                        var mapBack = new IdMapping();
-                        tmpDb.WblockCloneObjects(
-                            new ObjectIdCollection(new[] { tmpBtrId }), // источник: tempBD
-                            extDb.BlockTableId,                         // владелец: BlockTable внешней БД
-                            mapBack,
-                            DuplicateRecordCloning.Replace,
-                            false
-                        );
-
-                        // Получаем созданный BTR во внешней БД
-                        ObjectId newBtrId = ((IdPair)mapBack[tmpBtrId]).Value;
-
-                        // Копируем сущности
-                        var map = new IdMapping();
-                        db.WblockCloneObjects(
-                            idsToClone,            // объекты из текущего чертежа
-                            newBtrId,              // владелец: новый BlockTableRecord во внешней БД
-                            map,
-                            DuplicateRecordCloning.Ignore, // слои/типы/блоки-дочерние подтянутся
-                            false
-                        );
-
-                        // делаем подмену картинки previewIcon
-                        using (var trExt = extDb.TransactionManager.StartTransaction())
-                        {
-                            var newBtr = (BlockTableRecord)trExt.GetObject(newBtrId, OpenMode.ForWrite);
-                            newBtr.PreviewIcon = blockbmp;  // меняем previewIcon у блока
-                            newBtr.Annotative = AnnotativeStates.True;
-
-                            // настраиваем блок в зависимости от его типа
-                            switch (templateName)
-                            {
-                                case "STAND_TAMPLATE":
-
-                                    break;
-
-                                case "SIGN_TEMPLATE":
-
-                                    // спрашиваем сдвоенный ли знак
-                                    bool doubled = false;
-
-                                    PromptKeywordOptions pso = new PromptKeywordOptions("\n Блок состоит из одного занака?: ");
-                                    pso.Keywords.Add("Да");
-                                    pso.Keywords.Add("Нет");
-                                    pso.Keywords.Add("Выход");
-
-                                    pso.AllowArbitraryInput = false;
-                                    PromptResult pres = ed.GetKeywords(pso);
-
-                                    if (pres.StringResult == "Выход")
-                                    {
-                                        return null;
-                                    }
-
-                                    if (pres.StringResult != "Да")  // выходим, если не хотим переопределить блок
-                                    {
-                                        doubled = true;
-                                    }
-
-                                    // меняем атрибут GROUP для знака
-                                    foreach (ObjectId id in newBtr)
-                                    {
-                                        if (trExt.GetObject(id, OpenMode.ForWrite) is AttributeDefinition ad && !ad.Constant)
-                                        {
-
-                                            if (ad.Tag.Equals("НОМЕР_ЗНАКА", StringComparison.OrdinalIgnoreCase))
-                                            {
-                                                double offset = Math.Max(entityWidth, entityHeight) / 20;
-                                                ad.TextString = intBlockName;
-                                                ad.Position = new Point3d(minX + entityWidth + offset, minY + entityHeight / 2 - ad.Height / 2, 0);
-                                            }
-
-                                            if (ad.Tag.Equals("GROUP", StringComparison.OrdinalIgnoreCase))
-                                            {
-                                                ad.TextString = TsoddHost.Current.currentSignGroup; // привязываем к текущей группе знаков
-                                            }
-
-                                            if (ad.Tag.Equals("DOUBLED", StringComparison.OrdinalIgnoreCase))
-                                            {
-                                                ad.TextString = doubled.ToString();
-                                            }
-                                        }
-                                    }
-
-                                    break;
-                            }
-                            blockName = newBtr.Name;
-                            trExt.Commit();
-                        }
-                        // Сохраняем внешний файл
-                        extDb.SaveAs(dwgPath, DwgVersion.Current);
-
-                    }
+                    trForTemplate.Commit();
                 }
-            }
 
+                // проверяем наличие блока с таким же именем
+                using (var trForBlock = blocksDb.TransactionManager.StartTransaction())
+                {
+                    var btExt = (BlockTable)trForBlock.GetObject(blocksDb.BlockTableId, OpenMode.ForRead);
+
+                    // проверка имени добавляемого блока в БД
+                    if (btExt.Has(intBlockName))
+                    {
+                        // спрашиваем заменить ли определение блока или выход
+                        PromptKeywordOptions pso = new PromptKeywordOptions("\n Такой блок уже есть в БД. Переопределить его?: ");
+                        pso.Keywords.Add("Да");
+                        pso.Keywords.Add("Нет");
+                        pso.AllowArbitraryInput = false;
+
+                        PromptResult pres = ed.GetKeywords(pso);
+
+                        if (pres.StringResult != "Да")  // выходим, если не хотим переопределить блок
+                        {
+                            trForBlock.Abort();
+                            RibbonInitializer.Instance.readyToDeleteEntity = true; // разрешаем анализировать объекты при удалении
+                            return;
+                        }
+                    }
+
+                    // Копируем исходный блок в чертеж БД с блоками
+                    var blockMap = new IdMapping();
+                    blocksDb.WblockCloneObjects(
+                    idsToCloneOriginalBlock,
+                    blocksDb.BlockTableId,
+                    blockMap,
+                    DuplicateRecordCloning.Replace, // создаст копию записи блока
+                    false
+                    );
+
+                    // Получаем id клона 
+                    blockBtrId = ((IdPair)blockMap[intBtr.ObjectId]).Value;
+                    
+                    // Переименовываем и настраиваем блок
+                    blockBtr = (BlockTableRecord)trForBlock.GetObject(blockBtrId, OpenMode.ForWrite);
+
+                    // Сихронизируем порядок отрисовки элементов в блоках
+                    SyncDrawOrder(oldOrder, blockBtr, blockMap, trForBlock);
+
+
+                    HashSet<string> dublicateValues = new HashSet<string> { "STAND", "ОСЬ", "SIGN", "GROUP", "STANDHANDLE", "DOUBLED",
+                                                                             "НОМЕР_ЗНАКА", "TYPESIZE", "SIGNEXISTENCE", "MARK", "MATERIAL","MARKEXISTENCE" };
+                    // чистим блок от ненужных атрибутов и других элементов
+                    foreach (ObjectId id in intBtr)
+                    {
+                        ObjectId cloneId = blockMap[id].Value;
+                        if (cloneId == null) continue;
+
+                        Entity ent = (Entity)trForBlock.GetObject(cloneId, OpenMode.ForRead);
+
+                        // если id был передан в коллекции deleteObjects
+                        if (deleteObjects.Any(i => i == id))
+                        {
+                            ent.UpgradeOpen();
+                            ent.Erase();
+                            continue;
+                        }
+
+                        // если пользователь не захотел добавлять этот атрибут
+                        var item = collection.FirstOrDefault(i => i.ID == id);
+                        if (item != null && item.Value == false)
+                        {
+                            ent.UpgradeOpen();
+                            ent.Erase();
+                            continue;
+                        }
+
+                        if (ent is AttributeDefinition attr)
+                        {
+                            // если есть атрибуты из шаблонов
+                            if (dublicateValues.Contains(attr.Tag))
+                            {
+                                attr.UpgradeOpen();
+                                attr.Erase();
+                                continue;
+                            }
+                        }
+                    }
+
+             
+                    if (!btExt.Has(intBlockName)) blockBtr.Name = intBlockName;
+                    blockBtr.PreviewIcon = blockIcon;  // меняем previewIcon у блока
+                    blockBtr.Annotative = AnnotativeStates.True;
+                    blockBtr.Name = intBlockName;
+
+                    trForBlock.Commit();
+
+                }
+
+                // Добавляем атрибуты из блока шаблона в скопированный блок
+                var templateMap = new IdMapping();
+                blocksDb.WblockCloneObjects(
+                idsToCloneTemplateBlock,
+                blockBtrId,
+                templateMap,
+                DuplicateRecordCloning.Ignore, // создаст копию записи блока
+                false
+                );
+                
+              
+                // настраиваем блок в зависимости от его типа
+                switch (templateName)
+                {
+                    case "STAND_TAMPLATE":
+
+                        break;
+
+                    case "SIGN_TEMPLATE":
+                        using (var tr = blocksDb.TransactionManager.StartTransaction())
+                        {
+                            // меняем атрибуты для знака
+                            foreach (ObjectId id in blockBtr)
+                            {
+                           
+                                if (tr.GetObject(id, OpenMode.ForWrite) is AttributeDefinition ad && !ad.Constant)
+                                {
+
+                                    if (ad.Tag.Equals("НОМЕР_ЗНАКА", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        var entityWidth = (extents.MaxPoint.X - extents.MinPoint.X);
+                                        var entityHeight = (extents.MaxPoint.Y - extents.MinPoint.Y);
+
+                                        double offset = Math.Max(entityWidth, entityHeight) / 20;
+                                        ad.TextString = intBlockNumber;
+                                        ad.Position = new Point3d(extents.MinPoint.X + entityWidth + offset,
+                                                                    extents.MinPoint.Y + entityHeight / 2 , 0);
+                                    }
+
+                                    if (ad.Tag.Equals("GROUP", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        if (TsoddHost.Current.currentSignGroup == null) MessageBox.Show("Ошибка выбора текущей группы знаков");
+                                        ad.TextString = groupName; // привязываем к группе знаков
+                                    }
+
+                                    if (ad.Tag.Equals("DOUBLED", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        ad.TextString = (!singleSign).ToString();
+                                    }
+                                } 
+                            }
+                            tr.Commit();
+                        }
+                        break;
+
+                    case "MARK_TEMPLATE":
+                        // меняем атрибуты для знака
+                        foreach (ObjectId id in blockBtr)
+                        {
+                            using (var tr = blocksDb.TransactionManager.StartTransaction())
+                            {
+                                if (tr.GetObject(id, OpenMode.ForWrite) is AttributeDefinition ad && !ad.Constant)
+                                {
+                                    if (ad.Tag.Equals("GROUP", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        if (TsoddHost.Current.currentMarkGroup == null) MessageBox.Show("Ошибка выбора текущей группы разметки");
+                                        ad.TextString = groupName; // привязываем к группе 
+                                    }
+                                }
+                                tr.Commit();
+                            }
+                        }
+
+                        break;
+
+                }
+
+                // Сохраняем внешний файл
+                blocksDb.SaveAs(FilesLocation.dwgBlocksPath, DwgVersion.Current);
+
+            }
             catch
             {
                 ed.WriteMessage($"\n Блок \"{intBlockName}\" не получилось добавить в базу. \n");
-                return null;
+                return;
             }
+            finally
+            {
+                RibbonInitializer.Instance.readyToDeleteEntity = true; // разрешаем анализировать объекты при удалении
+                templateDb?.Dispose();
+                blocksDb?.Dispose();
+            }
+
             ed.WriteMessage($"\n Блок \"{intBlockName}\" успешно добавлен в базу. \n");
-            return blockName;
         }
+
+
+
+        public static void SyncDrawOrder(ObjectIdCollection oldOrder, BlockTableRecord newBtr, IdMapping map, Transaction tr)
+        {
+            // применяем порядок отрисовки примитивов
+            if (oldOrder != null && oldOrder.Count > 0)
+            {
+                DrawOrderTable drawOrderTableNew = tr.GetObject(newBtr.DrawOrderTableId, OpenMode.ForWrite) as DrawOrderTable;   // новая таблица DrawOrderTable
+                ObjectIdCollection newOrder = new ObjectIdCollection();                 // новый порядок
+
+                // перебор всех элементов в старом порядке
+                foreach (ObjectId id in oldOrder)
+                {
+                    if (!map.Contains(id)) continue; // не нашли такой id
+                    IdPair pair = map[id];
+
+                    if (!pair.IsCloned || pair.Value.IsNull)    //объект не был скопирован в новый блок или новый Id отсутствует
+                        continue;
+
+                    newOrder.Add(pair.Value);
+                }
+
+                drawOrderTableNew.SetRelativeDrawOrder(newOrder);
+            }
+        }
+
 
 
         public static void DeleteBlockFromBD(string blockName)
@@ -879,7 +759,7 @@ namespace TSODD
             using (var extDb = new Database(false, true))
             {
                 // Открываем внешний DWG для записи
-                extDb.ReadDwgFile(dwgPath, FileShare.None, false, "");
+                extDb.ReadDwgFile(FilesLocation.dwgBlocksPath, FileShare.None, false, "");
                 extDb.CloseInput(true);
 
                 using (var trExt = extDb.TransactionManager.StartTransaction())
@@ -893,18 +773,18 @@ namespace TSODD
                     }
                     else
                     {
-                        PromptKeywordOptions pso = new PromptKeywordOptions($"\n Вы точно хотите удалить блок \"{blockName}\" из БД?: ");
-                        pso.Keywords.Add("Да");
-                        pso.Keywords.Add("Нет");
-                        pso.AllowArbitraryInput = false;
+                        //PromptKeywordOptions pso = new PromptKeywordOptions($"\n Вы точно хотите удалить блок \"{blockName}\" из БД?: ");
+                        //pso.Keywords.Add("Да");
+                        //pso.Keywords.Add("Нет");
+                        //pso.AllowArbitraryInput = false;
 
-                        PromptResult pres = ed.GetKeywords(pso);
+                        //PromptResult pres = ed.GetKeywords(pso);
 
-                        if (pres.StringResult != "Да")  // выходим, если не хотим удалять блок
-                        {
-                            trExt.Abort();
-                            return;
-                        }
+                        //if (pres.StringResult != "Да")  // выходим, если не хотим удалять блок
+                        //{
+                        //    trExt.Abort();
+                        //    return;
+                        //}
 
                         // получаем ID определения блока 
                         var btrID = btExt[blockName];
@@ -917,7 +797,7 @@ namespace TSODD
                 }
 
                 // Сохраняем внешний файл
-                extDb.SaveAs(dwgPath, DwgVersion.Current);
+                extDb.SaveAs(FilesLocation.dwgBlocksPath, DwgVersion.Current);
             }
         }
 
@@ -946,69 +826,169 @@ namespace TSODD
             }
         }
 
-        // метод делает snapShot (чнимок настроенного вида блока) и возвращает bmp.
-        private static Bitmap GetBlockBitmap(ObjectId btrId, out double entityWidth, out double entityHeight, out double minX, out double minY, byte px = 32)
+
+
+        public static Bitmap GetBlockBitmap(BlockTableRecord btr, byte px, out Extents3d extents)
+        {
+            Bitmap bmpResult = null;
+            Bitmap bmpBackground = null;
+            Bitmap bmpText = null;
+
+            bmpBackground = GetBlockBitmapPart(btr, px, false, out extents); // делаем снимок блока - все кроме текста
+            bmpText = GetBlockBitmapPart(btr, px, true, out extents); // делаем снимок блока - только текст
+
+            bmpResult = JoinBitmapForBlockIcon(bmpBackground, bmpText);
+
+            bmpBackground.Dispose();
+            bmpText.Dispose();
+
+            return bmpResult;
+        }
+
+
+        private static Bitmap GetBlockBitmapPart(BlockTableRecord btr, byte px, bool onlyText, out Extents3d extents)
         {
 
-            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
-            var db = doc.Database;
-            var ed = doc.Editor;
+            var db = btr.Id.Database ?? Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database; // получаем БД объекта
+            //var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.GetDocument(db);
 
             Bitmap bmp = null;
+            bool hasExt = false;
+            extents = new Extents3d();
+
             Manager manager = ACAD.Application.DocumentManager.MdiActiveDocument.GraphicsManager;
 
-            KernelDescriptor descriptor = new KernelDescriptor();
-
+            var descriptor = new KernelDescriptor();
             descriptor.addRequirement(Autodesk.AutoCAD.UniqueString.Intern("3D Drawing"));
-            GraphicsKernel m_pGraphicsKernel = Manager.AcquireGraphicsKernel(descriptor);
-            Device device = manager.CreateAutoCADOffScreenDevice(m_pGraphicsKernel);
-            Model model = manager.CreateAutoCADModel(m_pGraphicsKernel);
 
-            using (device)
+            var kernel = Manager.AcquireGraphicsKernel(descriptor);
+            var device = manager.CreateAutoCADOffScreenDevice(kernel);
+            var model = manager.CreateAutoCADModel(kernel);
+
+            try
             {
-                device.OnSize(new System.Drawing.Size(px, px));
-                using (model)
+                using (device)
                 {
+                    device.OnSize(new System.Drawing.Size(px, px));
 
-                    View view = new Autodesk.AutoCAD.GraphicsSystem.View();
-                    device.Add(view);
-
-                    Point3d entityPosition;
-
-                    using (var tr = db.TransactionManager.StartTransaction())
+                    using (model)
                     {
-                        // определение блока 
-                        var btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
+                        var view = new Autodesk.AutoCAD.GraphicsSystem.View();
+                        device.Add(view);
 
-                        // создаем вхождение блока 
-                        var br = new BlockReference(Point3d.Origin, btrId);
-
-                        view.Add(br, model);    // добавляем на вид блок
-
-                        // определим габариты вхождения блока
-                        var bounds = br.GeometricExtents;
-
-                        minX = bounds.MinPoint.X;
-                        minY = bounds.MinPoint.Y;
-                        entityWidth = Math.Round(bounds.MaxPoint.X - minX,2);
-                        entityHeight = Math.Round(bounds.MaxPoint.Y - minY,2);
-                        entityPosition = new Point3d((bounds.MaxPoint.X + bounds.MinPoint.X) * 0.5, (bounds.MaxPoint.Y + bounds.MinPoint.Y) * 0.5, 0);
-
-                        try
+                        using (var tr = db.TransactionManager.StartTransaction())
                         {
-                            view.SetView(entityPosition, entityPosition, view.UpVector, entityWidth, entityHeight);
-                            view.ZoomExtents(bounds.MinPoint, bounds.MaxPoint);
+                            // 1. Берём порядок из DrawOrderTable
+                            ObjectIdCollection order = null;
+                            if (!btr.DrawOrderTableId.IsNull)
+                            {
+                                var dot = (DrawOrderTable)tr.GetObject(btr.DrawOrderTableId, OpenMode.ForRead);
+                                order = dot.GetFullDrawOrder(0);
+                            }
+
+                            // Если таблицы нет – просто по порядку в BTR
+                            IEnumerable<ObjectId> ids = order != null && order.Count > 0 ? order.Cast<ObjectId>() : btr.Cast<ObjectId>();
+
+                            // Пребираем все элементы по drawOrder и добаваляем на вид
+                            foreach (ObjectId id in ids)
+                            {
+                                Entity ent = (Entity)tr.GetObject(id, OpenMode.ForRead).Clone();
+
+                                try
+                                {
+                                    Extents3d ext = ent.GeometricExtents;
+                                    extents.AddExtents(ext);
+                                    hasExt = true;
+                                }
+                                catch { }
+
+                                // если элемент текст или атрибут, то настраиваем их
+                                bool isTextLike = ent is DBText || ent is MText || ent is AttributeDefinition || ent is AttributeReference;
+                                if (isTextLike) ent.ColorIndex = 3;
+                                if (ent is AttributeDefinition attr)
+                                {
+                                    attr.Tag = attr.TextString;
+                                    attr.AdjustAlignment(db);
+                                }
+
+                                // если выводим только текст и элемент текст или выводим все кроме текста и элемент не текст
+                                if (onlyText == isTextLike) view.Add(ent, model);
+                            }
+
+                            tr.Commit();
                         }
-                        catch (System.Exception ex) { Debug.Print(ex.Message); }
-                        ;
-                        
+
+                        // находим границы
+                        if (hasExt)
+                        {
+                            var minX = extents.MinPoint.X;
+                            var minY = extents.MinPoint.Y;
+                            var entityWidth = Math.Round(extents.MaxPoint.X - minX, 2);
+                            var entityHeight = Math.Round(extents.MaxPoint.Y - minY, 2);
+                            var center = new Point3d((extents.MaxPoint.X + extents.MinPoint.X) * 0.5, (extents.MaxPoint.Y + extents.MinPoint.Y) * 0.5, 0.0);
+
+                            try
+                            {   // настраиваем зум вида
+                                view.SetView(center, center, view.UpVector, entityWidth, entityHeight);
+                                view.ZoomExtents(extents.MinPoint, extents.MaxPoint);
+                            }
+                            catch { }
+                        }
+
                         System.Drawing.Rectangle rect = new System.Drawing.Rectangle(0, 0, px, px);
                         bmp = view.GetSnapshot(rect);
                     }
+
                 }
             }
+            finally
+            {
+                Manager.ReleaseGraphicsKernel(kernel);
+            }
+
             return bmp;
         }
+
+
+
+        private static Bitmap JoinBitmapForBlockIcon(Bitmap bmpBackground, Bitmap bmpText)
+        {
+            Bitmap bitmap = null;
+            if (bmpBackground == null || bmpText == null) return bitmap;
+            if (bmpBackground.Width != bmpText.Width || bmpBackground.Height != bmpText.Height) return bitmap;  // почему-то не совпадают размеры bitmap
+
+            bitmap = new Bitmap(bmpBackground);
+
+            var backColor = bmpText.GetPixel(0, 0); // цвет фона у картинки с текстом
+
+            for (int y = 0; y < bmpText.Height; y++)
+            {
+                for (int x = 0; x < bmpText.Width; x++)
+                {
+                    var p = bmpText.GetPixel(x, y);
+
+                    // если пиксель не фон — кладём его поверх
+                    if (!ColorsEqual(p, backColor))
+                    {
+                        bitmap.SetPixel(x, y, p);
+                    }
+                }
+            }
+
+            // внутренний метод сравнивает значение цвета пикселя с фоном с учетом погршности tol
+            bool ColorsEqual(System.Drawing.Color a, System.Drawing.Color b, int tol = 5)
+            {
+                return Math.Abs(a.R - b.R) <= tol &&
+                       Math.Abs(a.G - b.G) <= tol &&
+                       Math.Abs(a.B - b.B) <= tol;
+            }
+
+            return bitmap;
+        }
+
+
+
+
 
 
         // метод получает список имен блоков и их previewIcon, которые соответсвуют тегу (для заполнения RibbonSplitButton)
@@ -1018,7 +998,7 @@ namespace TSODD
 
             using (var blockDb = new Database(false, true))     // новая пустая база
             {
-                blockDb.ReadDwgFile(dwgPath, FileShare.Read, true, "");     // считываем в базу файл по указанному пути
+                blockDb.ReadDwgFile(FilesLocation.dwgBlocksPath, FileShare.Read, true, "");     // считываем в базу файл по указанному пути
 
                 using (var tr = blockDb.TransactionManager.StartTransaction())
                 {
@@ -1028,7 +1008,7 @@ namespace TSODD
                     {
                         var def = (BlockTableRecord)tr.GetObject(blockID, OpenMode.ForRead);
 
-                        if (def.Name.Contains("_TEMPLATE")) continue;
+                        //if (def.Name.Contains("_TEMPLATE")) continue;
 
                         bool match = false;
 
@@ -1047,6 +1027,9 @@ namespace TSODD
                                     match = true;
                                     break;
                                 }
+
+
+
                             }
                         }
 
@@ -1108,7 +1091,6 @@ namespace TSODD
         }
 
 
-
         // получает списиок Id блоков из выделения рамкой, которые соответствуют указанному тегу
         private static List<ObjectId> GetBloclListIdByTagFromSelection(Database db, List<ObjectId> selection, string tag)
         {
@@ -1136,64 +1118,183 @@ namespace TSODD
             return result;
         }
 
+        //  **************************************************************   РАБОТА С РАЗМЕТКОЙ   **************************************************************    //
 
-        //  **************************************************************   РАБОТА СО ЗНАКАМИ   **************************************************************    //
-
-
-        // Заполнение группы знаков
-        public static void FillSignsGroups()
+        public static void CreateUserMarkBlock()
         {
-            using (var extDb = new Database(false, true))
-            {
-                // Открываем внешний DWG для записи
-                extDb.ReadDwgFile(dwgPath, FileShare.None, false, "");
-                extDb.CloseInput(true);
+            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            var ed = doc.Editor;
 
-                using (var trExt = extDb.TransactionManager.StartTransaction())
+            var objectIdList = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string>());
+            if (objectIdList == null || objectIdList.Count == 0)
+            {
+                ed.WriteMessage(" \n Не выбраны объекты. Сначала выберите объекты, которые следует добавить в пользовательский блок разметки. \n");
+                return; // ничего не выбрали
+            }
+
+            // запрашиваем точки
+            List<Point3d> pointsForPK = new List<Point3d>();
+            PromptPointOptions ppo = new PromptPointOptions($"\n Выберите точку, для подсчета ПК (Esc - продолжить/выход): ");
+            ppo.AllowNone = true;
+            int numerator = 0;
+
+            while (true)
+            {
+                numerator++;
+                ppo.Message = $"\n Выберите точку {numerator}, для подсчета ПК (Esc/Enter - выход): ";
+                PromptPointResult ppr = ed.GetPoint(ppo);
+                if (ppr.Status != PromptStatus.OK) break;
+                pointsForPK.Add(ppr.Value);
+            }
+
+            if (pointsForPK.Count == 0) //  в итоге не выбрали точки для ПК
+            {
+                ed.WriteMessage("\n Ошибка создания пользовательского блока разметки");
+                return;
+            }
+
+            PromptStringOptions pso = new PromptStringOptions("Введите номер разметки");
+            pso.AllowSpaces = false;
+            PromptResult psr = ed.GetString(pso);
+            if (psr.Status != PromptStatus.OK) //  в итоге не выбрали точки для ПК
+            {
+                ed.WriteMessage("\n Ошибка создания пользовательского блока разметки");
+                return;
+            }
+
+
+            // создаем определение блока 
+            using (doc.LockDocument())
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                BlockTable blockTable = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
+                string newNameOfBlock = GenerateUniqueBlockName($"{psr.StringResult}_UserMarkBlock", blockTable);
+
+                var btr = new BlockTableRecord();
+                btr.Name = newNameOfBlock;
+                btr.Origin = pointsForPK[0]; // Устанавливаем точку вставки блока
+                btr.Annotative = AnnotativeStates.False;
+                btr.Units = db.Insunits;
+
+                blockTable.Add(btr);
+                tr.AddNewlyCreatedDBObject(btr, true);
+
+                // добавляе Entities из выбора objectIdList
+                List<Entity> entities = new List<Entity>();
+                RibbonInitializer.Instance.readyToDeleteEntity = false;
+                foreach (var id in objectIdList)
                 {
-                    var groupList = GetListOfSignGroups(trExt, extDb, out BlockTableRecord btr);
-                    RibbonInitializer.Instance.signsGroups.Items.Clear();
-                    foreach (var group in groupList) RibbonInitializer.Instance.signsGroups.Items.Add(new RibbonButton { Text = group, ShowText = true });
+                    Entity ent = (Entity)tr.GetObject(id, OpenMode.ForWrite);
+                    Entity clonedEnt = (Entity)ent.Clone();
+
+                    // добавляем в блок 
+                    btr.AppendEntity(clonedEnt);
+                    tr.AddNewlyCreatedDBObject(clonedEnt, true);
+
+                    // удаляем исходные entity
+                    ent.Erase();
                 }
+
+                // добавляем атрибуты для ПК
+                numerator = 0;
+                foreach (var point in pointsForPK)
+                {
+                    numerator++;
+                    AddAttributeToBlock(btr, tr, $"PK_VAL_{numerator}", "", "", point, 0, 5, true, true);
+                }
+                // добавляем атрибут привязки к оси
+                AddAttributeToBlock(btr, tr, tag: "ОСЬ", prompt: "Тег привязки к оси",
+                                    defaultValue: $"{TsoddHost.Current.currentAxis.Name}",
+                                    pointsForPK[0], 0, 2.5, true, true);
+                AddAttributeToBlock(btr, tr, tag: "MARK", prompt: "Тег для идентификации ", defaultValue: "", Point3d.Origin, 0);
+                AddAttributeToBlock(btr, tr, tag: "MATERIAL", prompt: "Материал", defaultValue: "Термопластик", Point3d.Origin, 3);
+                AddAttributeToBlock(btr, tr, tag: "MARKEXISTENCE", prompt: "Наличие", defaultValue: "Требуется нанести", Point3d.Origin, 4);
+
+
+                // делаем вставку блока
+                BlockReference br = new BlockReference(pointsForPK[0], btr.ObjectId);
+                var ms = (BlockTableRecord)tr.GetObject(blockTable[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
+                ms.AppendEntity(br);
+                tr.AddNewlyCreatedDBObject(br, true);
+
+                SetAttrValues(br, tr, new Dictionary<string, string> { ["ОСЬ"] = TsoddHost.Current.currentAxis.Name });
+
+                tr.Commit();
+                RibbonInitializer.Instance.readyToDeleteEntity = true;
+
+                ed.WriteMessage($"Пользовательский блок создан. Имя блока: {newNameOfBlock}");
+            }
+
+            string GenerateUniqueBlockName(string baseName, BlockTable bt)
+            {
+                string name = baseName;
+                int counter = 1;
+
+                while (bt.Has(name))
+                {
+                    name = $"{baseName}_{counter}";
+                    counter++;
+                }
+                return name;
             }
         }
 
 
-        // добавляет группу знаков в шаблон
-        public static void AddSignGroupToBD()
+
+        //  **************************************************************   РАБОТА С ГРУППАМИ   **************************************************************    //
+
+        // предвыбор групп при открытии файла
+        public static void PreSelectOfGroups()
         {
             var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
 
-            PromptStringOptions pso = new PromptStringOptions("\n Введите наименование новой группы знаков (Esc - выход): ");
-            pso.AllowSpaces = true;
-
-            var per = ed.GetString(pso);
-            if (per.Status != PromptStatus.OK)
-            {
-                ed.WriteMessage("\n Ошибка ввода наименования группы...");
-                return;
-            }
-
-            // новое наименование группы 
-            var groupName = per.StringResult;
-
             using (var extDb = new Database(false, true))
             {
                 // Открываем внешний DWG для записи
-                extDb.ReadDwgFile(dwgPath, FileShare.None, false, "");
+                extDb.ReadDwgFile(FilesLocation.dwgBlocksPath, FileShare.None, false, "");
                 extDb.CloseInput(true);
 
                 using (var trExt = extDb.TransactionManager.StartTransaction())
                 {
-                    // список групп в блоке знаков
+                    // список групп в блоке 
+                    var groupListSign = GetListGroups("SIGN", trExt, extDb, out _);
+                    var groupListMark = GetListGroups("MARK", trExt, extDb, out _);
 
-                    var groupList = GetListOfSignGroups(trExt, extDb, out BlockTableRecord btr);
+                    if (groupListSign.Count > 0) TsoddHost.Current.currentSignGroup = groupListSign[0];
+                    if (groupListMark.Count > 0) TsoddHost.Current.currentSignGroup = groupListMark[0];
+
+                    trExt.Commit();
+
+                }
+            }
+        }
+
+
+        // добавляет группу в шаблон
+        public static void AddGroupToBD(string template, string groupName)
+        {
+            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            var ed = doc.Editor;
+
+            using (var extDb = new Database(false, true))
+            {
+                // Открываем внешний DWG для записи
+                extDb.ReadDwgFile(FilesLocation.dwgBlocksPath, FileShare.None, false, "");
+                extDb.CloseInput(true);
+
+                using (var trExt = extDb.TransactionManager.StartTransaction())
+                {
+
+                    // список групп в блоке знаков
+                    var groupList = GetListGroups(template, trExt, extDb, out BlockTableRecord btr);
 
                     if (btr == null)    // если по какой-то причине у нас нет определения блока
                     {
-                        ed.WriteMessage($" \n Ошибка. Не найден блок \"SIGNS_GROUPS\" ");
+                        MessageBox.Show($" \n Ошибка. Не найден блок \"{template}\" ");
                         return;
                     }
 
@@ -1202,7 +1303,7 @@ namespace TSODD
 
                     if (dublicate)
                     {
-                        ed.WriteMessage($" \n Группа с именем \"{groupName}\" уже существует");
+                        MessageBox.Show($" \n Группа с именем \"{groupName}\" уже существует");
                         return;
                     }
 
@@ -1216,21 +1317,19 @@ namespace TSODD
                 }
 
                 // Сохраняем внешний файл,
-                extDb.SaveAs(dwgPath, DwgVersion.Current);
+                extDb.SaveAs(FilesLocation.dwgBlocksPath, DwgVersion.Current);
             }
-
-            FillSignsGroups();
         }
 
 
         // удаляет группу знаков из шаблона
-        public static void DeleteSignGroupFromBD(string groupName)
+        public static void DeleteGroupFromBD(string template, string groupName)
         {
             var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
 
-            PromptKeywordOptions pso = new PromptKeywordOptions($"\n Вы точно хотите удалить группу знаков \"{groupName}\" и входящие в нее блоки знаков из БД? [Да/Нет]: ");
+            PromptKeywordOptions pso = new PromptKeywordOptions($"\n Вы точно хотите удалить группу \"{groupName}\" и входящие в нее блоки из БД? [Да/Нет]: ");
             pso.Keywords.Add("Да");
             pso.Keywords.Add("Нет");
             pso.AllowArbitraryInput = false;
@@ -1239,25 +1338,27 @@ namespace TSODD
 
             if (pres.StringResult != "Да")  // выходим, если не хотим удалять группу
             {
-                ed.WriteMessage($" \n Ошибка удаления группы знаков ...");
+                MessageBox.Show($" \n Ошибка удаления группы ...");
                 return;
             }
+
+            List<string> groupList = new List<string>();
 
             // Если таки удаляем группу и знаки
             using (var extDb = new Database(false, true))
             {
                 // Открываем внешний DWG для записи
-                extDb.ReadDwgFile(dwgPath, FileShare.None, false, "");
+                extDb.ReadDwgFile(FilesLocation.dwgBlocksPath, FileShare.None, false, "");
                 extDb.CloseInput(true);
 
                 using (var trExt = extDb.TransactionManager.StartTransaction())
                 {
                     // список групп в блоке знаков
-                    var groupList = GetListOfSignGroups(trExt, extDb, out BlockTableRecord btr);
+                    groupList = GetListGroups(template, trExt, extDb, out BlockTableRecord btr);
 
                     if (btr == null)    // если по какой-то причине у нас нет определения блока
                     {
-                        ed.WriteMessage($" \n Ошибка. Не найден блок \"SIGNS_GROUPS\" ");
+                        MessageBox.Show($" \n Ошибка. Не найден блок \"{template}\" ");
                         return;
                     }
 
@@ -1270,6 +1371,7 @@ namespace TSODD
                             if (mt.Contents == groupName)
                             {
                                 if (!mt.IsErased) mt.Erase();
+                                groupList.Remove(groupName);
                             }
                         }
                     }
@@ -1280,8 +1382,6 @@ namespace TSODD
                     foreach (var blockID in bt)
                     {
                         var def = (BlockTableRecord)trExt.GetObject(blockID, OpenMode.ForWrite);
-
-                        if (def.Name.Contains("_TEMPLATE")) continue;
 
                         foreach (var id in def)
                         {
@@ -1300,28 +1400,24 @@ namespace TSODD
 
                 }
                 // Сохраняем внешний файл
-                extDb.SaveAs(dwgPath, DwgVersion.Current);
+                extDb.SaveAs(FilesLocation.dwgBlocksPath, DwgVersion.Current);
             }
 
-            FillSignsGroups();
+            if (groupList.Count > 0)
+            {
+                if (template == "SIGN") TsoddHost.Current.currentSignGroup = groupList[0];
+                if (template == "MARK") TsoddHost.Current.currentMarkGroup = groupList[0];
+            }
 
-            if (RibbonInitializer.Instance.signsGroups.Items.Count > 0) RibbonInitializer.Instance.signsGroups.Current = RibbonInitializer.Instance.signsGroups.Items[0];
         }
 
+        // возвращает текущий список групп 
+        public static List<string> GetListGroups(string templateName, Transaction tr, Database db)
+        {
+            return GetListGroups(templateName, tr, db, out _);
+        }
 
-
-
-
-
-
-
-
-
-
-
-
-        // возвращает текущий список групп знаков
-        public static List<string> GetListOfSignGroups(Transaction tr, Database db, out BlockTableRecord btr)
+        public static List<string> GetListGroups(string templateName, Transaction tr, Database db, out BlockTableRecord btr)
         {
             var result = new List<string>();
             btr = null;
@@ -1331,14 +1427,14 @@ namespace TSODD
 
             // проверка наличия шаблона
             var btExt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-            if (!btExt.Has("SIGN_GROUPS"))
+            if (!btExt.Has(templateName))
             {
-                ed.WriteMessage($"\n В БД не найден блок с группами знаков.");
+                ed.WriteMessage($"\n В БД не найден блок с группами \'{templateName}\'.");
                 return result;
             }
 
             // получаем ID определения блока 
-            var btrID = btExt["SIGN_GROUPS"];
+            var btrID = btExt[templateName];
 
             btr = (BlockTableRecord)tr.GetObject(btrID, OpenMode.ForWrite);
 
@@ -1352,14 +1448,9 @@ namespace TSODD
         }
 
 
-
-
-
-
-
         //  **************************************************************   TEMP  **************************************************************    //
 
-        public static void CreateStandTemplateBlock()
+        private static void CreateStandTemplateBlock()
         {
             var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
@@ -1370,7 +1461,7 @@ namespace TSODD
             {
                 var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-                //ObjectId btrId;
+                //ObjectId brId;
                 if (bt.Has(blockName)) return;
 
                 // Создаём пустое определение блока
@@ -1380,15 +1471,15 @@ namespace TSODD
                 tr.AddNewlyCreatedDBObject(btr, true);
 
                 // Добавляем невидимые атрибуты 
-                AddHiddenAttr(btr, tr, tag: "STAND", prompt: "Тег для идентификации ", defaultValue: "", 0);
-
-                //AddHiddenAttr(btr, tr, tag: "STANDHANDLE", prompt: "Тег привязки знака к стойке", defaultValue: "", 2);
+                AddAttributeToBlock(btr, tr, tag: "STAND", prompt: "Тег для идентификации ", defaultValue: "", Point3d.Origin, 0);
+                AddAttributeToBlock(btr, tr, tag: "ОСЬ", prompt: "Тег привязки стойки к оси", defaultValue: "", Point3d.Origin, 1, 2.5, true);
 
                 tr.Commit();
             }
         }
 
-        public static void CreateSignTemplateBlock()
+
+        private static void CreateSignTemplateBlock()
         {
             var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
@@ -1399,7 +1490,7 @@ namespace TSODD
             {
                 var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
 
-                //ObjectId btrId;
+                //ObjectId brId;
                 if (bt.Has(blockName)) return;
 
                 // Создаём пустое определение блока
@@ -1409,22 +1500,103 @@ namespace TSODD
                 tr.AddNewlyCreatedDBObject(btr, true);
 
                 // Добавляем невидимые атрибуты 
-                AddHiddenAttr(btr, tr, tag: "SIGN", prompt: "Тег для идентификации ", defaultValue: "", 0);
-                AddHiddenAttr(btr, tr, tag: "GROUP", prompt: "Группа знаков", defaultValue: "", 1);
-                AddHiddenAttr(btr, tr, tag: "STANDHANDLE", prompt: "Тег привязки знака к стойке", defaultValue: "", 2);
-                AddHiddenAttr(btr, tr, tag: "DOUBLED", prompt: "Два знака на одной стойке", defaultValue: "false", 3);
+                AddAttributeToBlock(btr, tr, tag: "SIGN", prompt: "Тег для идентификации ", defaultValue: "", Point3d.Origin, 0);
+                AddAttributeToBlock(btr, tr, tag: "GROUP", prompt: "Группа", defaultValue: "", Point3d.Origin, 1);
+                AddAttributeToBlock(btr, tr, tag: "STANDHANDLE", prompt: "Тег привязки знака к стойке", defaultValue: "", Point3d.Origin, 2);
+                AddAttributeToBlock(btr, tr, tag: "DOUBLED", prompt: "Два знака на одной стойке", defaultValue: "false", Point3d.Origin, 3);
+                AddAttributeToBlock(btr, tr, tag: "НОМЕР_ЗНАКА", prompt: "Номер знака", defaultValue: "", Point3d.Origin, 4, 2.5, true, false,false);
+                AddAttributeToBlock(btr, tr, tag: "TYPESIZE", prompt: "Типоразмер", defaultValue: "I", Point3d.Origin, 3);
+                AddAttributeToBlock(btr, tr, tag: "SIGNEXISTENCE", prompt: "Наличие", defaultValue: "Необходимо установить", Point3d.Origin, 4);
+                tr.Commit();
+            }
+        }
+
+        private static void CreateMarkTemplateBlock()
+        {
+            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            const string blockName = "MARK_TEMPLATE"; // имя блока
+
+            using (var lok = doc.LockDocument())
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+                //ObjectId brId;
+                if (bt.Has(blockName)) return;
+
+                // Создаём пустое определение блока
+                bt.UpgradeOpen();
+                var btr = new BlockTableRecord { Name = blockName };
+                bt.Add(btr);
+                tr.AddNewlyCreatedDBObject(btr, true);
+
+                // Добавляем невидимые атрибуты 
+                AddAttributeToBlock(btr, tr, tag: "MARK", prompt: "Тег для идентификации ", defaultValue: "", Point3d.Origin, 0);
+                AddAttributeToBlock(btr, tr, tag: "ОСЬ", prompt: "Тег привязки стойки к оси", defaultValue: "", Point3d.Origin, 1, 2.5, true);
+                AddAttributeToBlock(btr, tr, tag: "NUMBER", prompt: "Номер", defaultValue: "", Point3d.Origin, 2);
+                AddAttributeToBlock(btr, tr, tag: "GROUP", prompt: "Группа", defaultValue: "", Point3d.Origin, 3);
+                AddAttributeToBlock(btr, tr, tag: "MATERIAL", prompt: "Материал", defaultValue: "Термопластик", Point3d.Origin, 4);
+                AddAttributeToBlock(btr, tr, tag: "MARKEXISTENCE", prompt: "Наличие", defaultValue: "Требуется нанести", Point3d.Origin, 5);
 
                 tr.Commit();
             }
         }
 
 
-        public static void DeleteTemplateBlocks()
+        private static void CreateSignGroupsTemplateBlock()
+        {
+            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            const string blockName = "SIGN_GROUPS"; // имя блока
+
+            using (var lok = doc.LockDocument())
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+                //ObjectId brId;
+                if (bt.Has(blockName)) return;
+
+                // Создаём пустое определение блока
+                bt.UpgradeOpen();
+                var btr = new BlockTableRecord { Name = blockName };
+                bt.Add(btr);
+                tr.AddNewlyCreatedDBObject(btr, true);
+                tr.Commit();
+            }
+        }
+
+        private static void CreateMarkGroupsTemplateBlock()
+        {
+            var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            const string blockName = "MARK_GROUPS"; // имя блока
+
+            using (var lok = doc.LockDocument())
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+                //ObjectId brId;
+                if (bt.Has(blockName)) return;
+
+                // Создаём пустое определение блока
+                bt.UpgradeOpen();
+                var btr = new BlockTableRecord { Name = blockName };
+                bt.Add(btr);
+                tr.AddNewlyCreatedDBObject(btr, true);
+                tr.Commit();
+            }
+        }
+
+
+        private static void DeleteTemplateBlocks()
         {
             var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
 
-            HashSet<string> blockNames = new HashSet<string> { "SIGN_TEMPLATE", "STAND_TEMPLATE" };
+            HashSet<string> blockNames = new HashSet<string> { "SIGN_TEMPLATE", "STAND_TEMPLATE", "MARK_TEMPLATE", "SIGN_GROUPS", "MARK_GROUPS" };
 
             using (var lok = doc.LockDocument())
             using (var tr = db.TransactionManager.StartTransaction())
@@ -1445,10 +1617,21 @@ namespace TSODD
             }
         }
 
+        public static void BuildTemplateDWG()
+        {
+            DeleteTemplateBlocks();
+            CreateStandTemplateBlock();
+            CreateSignTemplateBlock();
+            CreateMarkTemplateBlock();
+            CreateSignGroupsTemplateBlock();
+            CreateMarkGroupsTemplateBlock();
+        }
 
+
+        //  **************************************************************   ВЫВОД  **************************************************************    //
 
         // получить список блоков 
-        public static List<T> GetListOfRefBlocks <T>(Dictionary<string, string> dictionary = null) 
+        public static List<T> GetListOfRefBlocks<T>(Dictionary<string, string> dictionary = null)
             where T : IRefBlock, new()
         {
             var result = new List<T>();
@@ -1464,7 +1647,7 @@ namespace TSODD
                 foreach (var blockId in bt)
                 {
                     var btDef = (BlockTableRecord)tr.GetObject(blockId, OpenMode.ForRead);
-                    
+
                     // если это внешняя ссылка (attach/overlay) — пропускаем
                     if (btDef.IsFromExternalReference || btDef.IsFromOverlayReference) continue;
 
@@ -1490,14 +1673,17 @@ namespace TSODD
                         foreach (ObjectId btRefId in btDef.GetBlockReferenceIds(/*directOnly*/ true, /*includeErased*/ false))
                         {
                             var brRef = (BlockReference)tr.GetObject(btRefId, OpenMode.ForRead);
-                           
+
                             // создаем экземпляр списка
                             var block = new T();
 
                             switch (block)
                             {
                                 case Stand stand:
-                                    
+
+                                    // ID
+                                    stand.ID = btRefId;
+
                                     //Обход атрибутов вставки
                                     foreach (ObjectId arId in brRef.AttributeCollection)
                                     {
@@ -1515,9 +1701,12 @@ namespace TSODD
 
                                     result.Add(block);
 
-                                break;
+                                    break;
 
                                 case Sign sign:
+
+                                    // ID
+                                    sign.ID = btRefId;
 
                                     //Обход атрибутов вставки
                                     foreach (ObjectId arId in brRef.AttributeCollection)
@@ -1525,7 +1714,7 @@ namespace TSODD
                                         var ar = (AttributeReference)tr.GetObject(arId, OpenMode.ForRead);
 
                                         switch (ar.Tag)
-                                        { 
+                                        {
                                             case var a when a.Equals("STANDHANDLE", StringComparison.OrdinalIgnoreCase):
                                                 sign.StandHandle = ar.TextString;
                                                 break;
@@ -1537,24 +1726,24 @@ namespace TSODD
                                             case var a when a.Equals("DOUBLED", StringComparison.OrdinalIgnoreCase):
                                                 sign.Doubled = ar.TextString == "True" ? "2" : "1";
                                                 break;
-                                        }
-                                    }
 
-                                    // параметры динамического блока
-                                    foreach (DynamicBlockReferenceProperty prop in brRef.DynamicBlockReferencePropertyCollection)
-                                    {
-                                        if (prop.PropertyName.Equals("Типоразмер", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            sign.TypeSize = prop.Value.ToString();
-                                        }
-                                        if (prop.PropertyName.Equals("Наличие", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            sign.Existence = prop.Value.ToString();
+                                            case var a when a.Equals("TYPESIZE", StringComparison.OrdinalIgnoreCase):
+                                                sign.TypeSize = ar.TextString; 
+                                                break;
+
+                                            case var a when a.Equals("SIGNEXISTENCE", StringComparison.OrdinalIgnoreCase):
+                                                switch (ar.TextString)
+                                                {
+                                                    case "Установить": sign.Existence = "Необходимо установить"; break;
+                                                    case "Демонтировать": sign.Existence = "Необходимо демонтировать"; break;
+                                                    default: sign.Existence = ar.TextString; break;
+                                                }
+                                                break;
                                         }
                                     }
 
                                     // вытягиваем имя из словаря
-                                    if (dictionary.ContainsKey(sign.Number))
+                                    if (dictionary != null && dictionary.ContainsKey(sign.Number))
                                     {
                                         string nameOfSign = null;
                                         dictionary.TryGetValue(sign.Number, out nameOfSign);
@@ -1569,7 +1758,54 @@ namespace TSODD
                                     }
                                     result.Add(block);
 
-                                break;
+                                    break;
+
+
+                                case Mark mark:
+
+                                    // ID
+                                    mark.ID = btRefId;
+
+                                    //Обход атрибутов вставки
+                                    foreach (ObjectId arId in brRef.AttributeCollection)
+                                    {
+                                        var ar = (AttributeReference)tr.GetObject(arId, OpenMode.ForRead);
+
+                                        switch (ar.Tag)
+                                        {
+                                            case var a when a.Equals("ОСЬ", StringComparison.OrdinalIgnoreCase):
+                                                mark.AxisName = ar.TextString;
+                                                break;
+                                            
+                                            case var a when a.Equals("MATERIAL", StringComparison.OrdinalIgnoreCase):
+                                                mark.Material = ar.TextString;
+                                                break;
+
+                                            case var a when a.Equals("MARKEXISTENCE", StringComparison.OrdinalIgnoreCase):
+                                                switch (ar.TextString)
+                                                {
+                                                    case "Нанести": mark.Existence = "Требуется нанести"; break;
+                                                    case "Демаркировать": mark.Existence = "Требуется демаркировать"; break;
+                                                    default: mark.Existence = ar.TextString; break;
+                                                }
+                                                break;
+                                        }
+                                    }
+
+                                    // количество
+                                    mark.Quantity = "1 шт";
+
+                                    // номер разметки
+                                    mark.Number = btDef.Name;
+                                    HashSet<char> delimetr = new HashSet<char> { '-', '_' };
+                                    char hasDelimetr = mark.Number.FirstOrDefault(d => delimetr.Contains(d));
+                                    if (hasDelimetr != 0) mark.Number = mark.Number.Split(hasDelimetr)[0].Trim();
+
+                                    GetMarkProperties(tr, db, mark, brRef);  // Заполняем остальные данные по блоку разметки
+
+                                    result.Add(block);
+
+                                    break;
                             }
                         }
                     }
@@ -1579,8 +1815,6 @@ namespace TSODD
             }
             return result;
         }
-
-
 
 
         private static void GetStandProperties(Transaction tr, Database db, Stand stand, Point3d insertPoint)
@@ -1594,15 +1828,15 @@ namespace TSODD
                 return;
             }
 
-            Polyline axisPolyline = axis.AxisPoly;   // полилиния оси
+            Autodesk.AutoCAD.DatabaseServices.Polyline axisPolyline = axis.AxisPoly;   // полилиния оси
 
             Point3d pkPoint = axisPolyline.GetClosestPointTo(insertPoint, false);   // точка ПК стойки на оси
 
             // считаем ПК
-            double koef = db.Insunits == UnitsValue.Meters ? 1 : 0.001;     // коэффициент перевода в метры
+            double koef = db.Insunits == UnitsValue.Meters ? 1 : 0.001;   // коэффициент перевода в метры
             var distance = axisPolyline.GetDistAtPoint(pkPoint) * koef;   // расстояние от начала 
             if (axis.ReverseDirection) distance = axisPolyline.Length * koef - distance;    // если реверсивное направление оси
-            distance = Math.Round(distance, 3) + axis.StartPK;
+            distance = Math.Round(distance, 3) + axis.StartPK*100;
 
             stand.Distance = distance;  // расстояние от начала оси до точки ПК
 
@@ -1612,49 +1846,279 @@ namespace TSODD
             stand.PK = $"ПК {pt_1} + {pt_2}";  // пикет
 
             // положение слева/справа от оси (на оси)
-            // если расстояние меньше чем указано в настройках, то считаем, что на оси
-            double minDist = 1 / koef;
-            double distToAxis = insertPoint.DistanceTo(pkPoint);
-            if (distToAxis <= minDist)
-            {
-                stand.Side = "На оси";
-            }
-            else
-            {
-                try
-                {
-                    double vectDist = axis.ReverseDirection ? axisPolyline.GetDistAtPoint(pkPoint) + distToAxis :
-                                                                axisPolyline.GetDistAtPoint(pkPoint) - distToAxis;
-
-                    Point3d secondPointOnAxis = axisPolyline.GetPointAtDist(vectDist);
-
-                    Vector3d vectorAxis = (pkPoint - secondPointOnAxis).GetNormal();
-                    Vector3d vrctorPoint = (insertPoint - secondPointOnAxis).GetNormal();
-
-                    var cross = vectorAxis.CrossProduct(vrctorPoint);
-
-                    stand.Side = cross.Z < 0 ? "Справа от оси" : "Слева от оси";
-                }
-                catch
-                {
-                    stand.Side = "Не получилось определить";
-
-                    MessageBox.Show($"Не удалось отсроить вектор для стойки при определении стороны относительно оси. " +
-                        $"Проверь блок в координатах {insertPoint}");
-                }
-
-            }
+            stand.Side = GetObjectSide(axis, insertPoint, koef);
         }
 
 
 
+        private static void GetMarkProperties(Transaction tr, Database db, Mark mark, BlockReference bref)
+        {
+            Axis axis = TsoddHost.Current.axis.FirstOrDefault(a => a.Name == mark.AxisName);   // ось к которой привязанна стойка
+            if (axis == null)
+            {
+                MessageBox.Show($"Ошибка. Не получилось найти ось {mark.AxisName} при создании объекта Mark (разметка)." +
+                    $" Проверь блок в координатах {bref.Position} ");
+
+                return;
+            }
+
+            Autodesk.AutoCAD.DatabaseServices.Polyline axisPolyline = axis.AxisPoly;   // полилиния оси
+
+            double maxPkDistance = double.MinValue;
+            double minPkDistance = double.MaxValue;
+
+            List<Point3d> pointsPK = new List<Point3d>();
+            Dictionary<double, string> PK = new Dictionary<double, string>();
+
+            // найдем все точки PK_VAL
+            double koef = db.Insunits == UnitsValue.Meters ? 1 : 0.001;   // коэффициент перевода в метры
+            foreach (ObjectId arId in bref.AttributeCollection)
+            {
+                var ar = (AttributeReference)tr.GetObject(arId, OpenMode.ForRead);
+                if (ar.Tag.Contains("PK_VAL"))
+                {
+                    Point3d currentPkPosition = ar.Position;
+                    pointsPK.Add(currentPkPosition);
+
+                    // считаем ПК
+                    double distance = 0;
+                    try
+                    {
+                       distance = axisPolyline.GetDistAtPoint(axisPolyline.GetClosestPointTo(currentPkPosition, false)) * koef;   // расстояние от начала 
+                    }
+                    catch 
+                    {
+                        MessageBox.Show($"Ошибка определения ПК для блока разметки. Проверь блок в координатах {bref.Position}");
+                        continue;
+                    }
+
+
+                    if (axis.ReverseDirection) distance = axisPolyline.Length * koef - distance;    // если реверсивное направление оси
+                    distance = Math.Round(distance, 3) + axis.StartPK * 100;
+
+                    if (distance > maxPkDistance) maxPkDistance = distance;
+                    if (distance < minPkDistance) minPkDistance = distance;
+
+                    int pt_1 = (int)Math.Truncate(distance / 100);
+                    double pt_2 = Math.Round((distance - pt_1 * 100), 2);
+
+                    PK.Add(distance, $"ПК {pt_1} + {pt_2}"); // запоминаем в словарь расстояние и значение ПК
+                }
+            }
+
+            // считаем площадь разметки
+            mark.Square = Math.Round(GetHatchSquare(tr, db, bref),1);
+
+            // записываем значения начала и конца ПК
+            if (PK.TryGetValue(minPkDistance, out string minPkVal)) mark.PK_start = minPkVal;
+            if (PK.TryGetValue(maxPkDistance, out string maxPkVal)) mark.PK_end = maxPkVal;
+
+            // считаем среднюю точку и положение относительно оси
+            if (pointsPK.Count > 0)
+            {
+                Point3d averagePoint = new Point3d(pointsPK.Sum(p => p.X) / pointsPK.Count, pointsPK.Sum(p => p.Y) / pointsPK.Count, 0);
+                mark.Side  = GetObjectSide(axis, averagePoint, koef);
+            }
+        }
+
+
+        private static double GetHatchSquare(Transaction tr, Database db, BlockReference bref)
+        {
+            double sum = 0 ;
+            double koef = db.Insunits == UnitsValue.Meters ? 1 : 0.001;   // коэффициент перевода в метры
+
+            DBObjectCollection explodedObjects = new DBObjectCollection();
+            bref.Explode(explodedObjects);
+
+            // перебираем все элементы блока и ищем штриховки
+            foreach (DBObject obj in explodedObjects)
+            {
+                if (obj is BlockReference blr) // если это блок, то рекурсируем
+                {
+                    sum += GetHatchSquare(tr, db, blr);
+                }
+  
+                if (obj is Autodesk.AutoCAD.DatabaseServices.Polyline poly) // если это 
+                {
+                    if (poly.ConstantWidth > 0) sum += poly.Length * koef * poly.ConstantWidth * koef;
+                }
+
+                if (obj is Hatch hatch)
+                {
+                    sum += hatch.Area * koef * koef;
+                }
+            }
+
+            return sum;
+        }
 
 
 
+        public static List<Mark> GetListOfLineTypes()
+        {
+            List<Mark> result = new List<Mark>();
+
+            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            var ed = doc.Editor;
+
+            var objectIds = LineTypeReader.CollectMarkLineTypeID(onlyMaster: true); // получаем ID всех master линий
+            if (objectIds.Length == 0) return result; // если нет разметки в виде линий в чертеже, то выходим
+
+            using (doc.LockDocument())
+            using (var tr = db.TransactionManager.StartTransaction())
+            { 
+                foreach (var id in objectIds)
+                {
+                    Mark currentMarkLineType = new Mark();  // экземпляр разметки
+                    TsoddXdataElement xDataElement = new TsoddXdataElement();
+                    xDataElement.Parse(id);
+
+                    // площадь разметки основной линии 
+                    double koef = db.Insunits == UnitsValue.Meters ? 1 : 0.001;   // коэффициент перевода в метры
+
+                    var masterPolyline = (Autodesk.AutoCAD.DatabaseServices.Polyline)tr.GetObject(xDataElement.MasterPolylineID, OpenMode.ForRead);  // получаем полилинию по ID
+
+                    // полилиния оси
+                    Handle tempHandle = new Handle(Convert.ToInt64(xDataElement.AxisHandle, 16));
+                    ObjectId axisID = db.GetObjectId(false, tempHandle, 0);
+
+                    Axis axis = TsoddHost.Current.axis.FirstOrDefault(a => a.PolyID == axisID);   // ось к которой привязанна линия
+
+                    currentMarkLineType.AxisName = axis.Name;       // имя привязанной оси
+
+                    currentMarkLineType.Number = xDataElement.Number;       // номер разметки
+
+                    currentMarkLineType.Quantity = $"{Math.Round(masterPolyline.Length*koef,1)} м";      // количество
+
+                    currentMarkLineType.Square = GetPatternValues(masterPolyline, koef); // площадь master полилинии
+
+                    if (xDataElement.SlavePolylineID != ObjectId.Null)      // если десть slave полилиния
+                    {
+                        var slavePolyline = (Autodesk.AutoCAD.DatabaseServices.Polyline)tr.GetObject(xDataElement.SlavePolylineID, OpenMode.ForRead);  // получаем полилинию по ID
+                        currentMarkLineType.Square += GetPatternValues(slavePolyline, koef); // площадь slave полилинии
+                    }
+
+                    currentMarkLineType.Square = Math.Round(currentMarkLineType.Square, 1);
+
+                    double dist_1 = 0;  // переменные для опрделения расстояний ПК
+                    double dist_2 = 0;
+
+                    try
+                    {
+                        dist_1 = axis.AxisPoly.GetDistAtPoint(axis.AxisPoly.GetClosestPointTo(masterPolyline.StartPoint, false)) * koef;
+                        dist_2 = axis.AxisPoly.GetDistAtPoint(axis.AxisPoly.GetClosestPointTo(masterPolyline.EndPoint, false)) * koef;
+                    }
+                    catch
+                    {
+                        MessageBox.Show($"Ошибка определения ПК для  линии разметки. Проверь линию с началом в координатах {masterPolyline.StartPoint}");
+                        continue;
+                    }
+
+                    if (axis.ReverseDirection) // если реверсивное направление оси
+                    {
+                        dist_1 = Math.Round(axis.AxisPoly.Length * koef - dist_1, 3) + axis.StartPK*100;
+                        dist_2 = Math.Round(axis.AxisPoly.Length * koef - dist_2, 3) + axis.StartPK*100;
+                    }
+
+                    double minDist = Math.Min(dist_1, dist_2);
+                    double maxDist = Math.Max(dist_1, dist_2);
+
+                    int pt_1 = 0;
+                    double pt_2 = 0;
+
+                    pt_1 = (int)Math.Truncate(minDist / 100);
+                    pt_2 = Math.Round((minDist - pt_1 * 100), 2);
+                    currentMarkLineType.Distance = minDist;
+                    currentMarkLineType.PK_start = $"ПК {pt_1} + {pt_2}";   // ПК начала линии
+
+                    pt_1 = (int)Math.Truncate(maxDist / 100);
+                    pt_2 = Math.Round((maxDist - pt_1 * 100), 2);
+                    currentMarkLineType.PK_end = $"ПК {pt_1} + {pt_2}";     // ПК конца линии
+
+                    currentMarkLineType.Side = GetObjectSide(axis, masterPolyline.StartPoint, koef);    // сторона относительно оси
+
+                    currentMarkLineType.Material = xDataElement.Material;
+
+                    switch (xDataElement.Existence)
+                    {
+                        case "Нанести": currentMarkLineType.Existence = "Требуется нанести"; break;
+                        case "Демаркировать": currentMarkLineType.Existence = "Требуется демаркировать"; break;
+                        default: currentMarkLineType.Existence = xDataElement.Existence; break;
+                    }
+
+                    result.Add(currentMarkLineType);
+                }
+            }
+
+            // метод для определения площади линии
+            double GetPatternValues(Autodesk.AutoCAD.DatabaseServices.Polyline polyline, double koef)
+            {
+                (double dash, double space) patternValues =(new double(), new double());
+                string lineTypeName = polyline.Linetype;
+
+                // если сплошная линия
+                if (lineTypeName.Contains("continuous")) 
+                {
+                    return polyline.Length * polyline.ConstantWidth * Math.Pow( koef,2);
+                }
+
+                int start = lineTypeName.IndexOf('(') + 1;
+                int end = lineTypeName.IndexOf(')', start);
+                var values = lineTypeName.Substring(start, end - start).Split('_');
+                patternValues.dash = values.Select(x => double.Parse(x)).Where(x=>x > 0).Sum();
+                patternValues.space = Math.Abs(values.Select(x => double.Parse(x)).Where(x => x < 0).Sum());
+
+                double dash_k = patternValues.dash / (patternValues.dash + patternValues.space);
+                double dash_s = polyline.Length * dash_k * polyline.ConstantWidth * Math.Pow(koef, 2);
+
+                return dash_s;
+            }
+            return result;
+        }
 
 
+        // метод определяет сторону положения объекта относительно оси
+        private static string GetObjectSide(Axis axis, Point3d objPoint, double unitsKoef)
+        {
+            Point3d pkPoint = axis.AxisPoly.GetClosestPointTo(objPoint, false);   // точка объекта, спроецированная на ось на оси
+            var minDist = 1 / unitsKoef;     // минимальное расстояние, которое определяет положение объекта " на оси"
+
+            double distToAxis = objPoint.DistanceTo(pkPoint);   // расстояние от объекта до оси
+  
+            if (distToAxis <= minDist)
+            {
+                return "На оси";
+            }
+            else
+            {
+                try
+                {   
+                    // расстояние бдля определения вектора по оси с учетом направления оси
+                    double vectDist = axis.ReverseDirection ? axis.AxisPoly.GetDistAtPoint(pkPoint) + 1:
+                                                              axis.AxisPoly.GetDistAtPoint(pkPoint) - 1;
+                    // точка для вектора на оси
+                    Point3d secondPointOnAxis = axis.AxisPoly.GetPointAtDist(vectDist);
+
+                    Vector3d projectionVector = (objPoint-pkPoint).GetNormal();   // вектор, направленный по проекции объекта на ось
+                    Point3d projectionPoint = pkPoint + projectionVector * 1;       // точка на проекции объекта на ось
 
 
+                    Vector3d vectorAxis = (pkPoint - secondPointOnAxis).GetNormal();
+                    Vector3d vrctorPoint = (projectionPoint - secondPointOnAxis).GetNormal();
+
+                    var cross = vectorAxis.CrossProduct(vrctorPoint);
+                    return cross.Z < 0 ? "Справа от оси" : "Слева от оси";
+                }
+                catch
+                {
+                    Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Editor.WriteMessage
+                        ($"Не удалось отсроить вектор для линии разметки с началом в координатах {objPoint}");
+                 
+                    return "Не получилось определить";
+                }
+            }
+        }
 
 
     }

@@ -6,9 +6,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Controls;
+using System.Windows.Documents;
+using System.Collections.Generic;
+using TSODD;
+
+
+
+
 
 namespace ACAD_test
 {
+
+
     // класс для записи/перезаписи и чтения XData полилиний
     public static class AutocadXData
     {
@@ -30,6 +39,7 @@ namespace ACAD_test
             }
             
         }
+
 
 
         // метод записывет XData в Entity
@@ -55,16 +65,17 @@ namespace ACAD_test
 
                         // создаем буфер для записи XData
                         ResultBuffer buff = new ResultBuffer { new TypedValue((int)DxfCode.ExtendedDataRegAppName, AppName) };
-                        if (list != null) foreach (var val in list) buff.Add(new TypedValue(val.code, val.value));
+                        if (list != null)  foreach (var val in list) buff.Add(new TypedValue(val.code, val.value));
 
                         // обновляем XData
                         ent.XData = AddXDataSection(ent.XData, buff);
-
+      
                         tr.Commit();
                     }
                 }
             }
         }
+
 
 
         // метод добавляет / обновляет секцию XData, не трогая старые секции
@@ -107,28 +118,34 @@ namespace ACAD_test
             if (objId.IsNull) throw new ArgumentNullException(nameof(objId));
             var db = objId.Database ?? Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database; // получаем БД объекта
 
-            using (var tr = db.TransactionManager.StartTransaction())
+            try
             {
-                Entity ent = (Entity)tr.GetObject(objId, OpenMode.ForRead);
-                ResultBuffer buff = ent.XData;
-
-                if (buff == null) return result;
-
-                var arr = buff.AsArray();
-
-                for (int i = 0; i < arr.Length; i++)
+                using (var tr = db.TransactionManager.StartTransaction())
                 {
-                    if (arr[i].TypeCode == (int)DxfCode.ExtendedDataRegAppName && arr[i].Value.ToString() == AppName)
-                    {
-                        i++;
-                        while (i < arr.Length && arr[i].TypeCode != (int)DxfCode.ExtendedDataRegAppName)
-                        { result.Add((arr[i].TypeCode, arr[i].Value.ToString())); i++; }    // Добавляем XData в List
+                    Entity ent = (Entity)tr.GetObject(objId, OpenMode.ForRead);
 
-                        break;
+                    ResultBuffer buff = ent.XData;
+
+                    if (buff == null) return result;
+
+                    var arr = buff.AsArray();
+
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        if (arr[i].TypeCode == (int)DxfCode.ExtendedDataRegAppName && arr[i].Value.ToString() == AppName)
+                        {
+                            i++;
+                            while (i < arr.Length && arr[i].TypeCode != (int)DxfCode.ExtendedDataRegAppName)
+                            { result.Add((arr[i].TypeCode, arr[i].Value.ToString())); i++; }    // Добавляем XData в List
+
+                            break;
+                        }
                     }
+                    tr.Commit();
                 }
+                return result;
             }
-            return result;
+            catch (Exception ex) { return result; }
         }
     }
 
@@ -149,18 +166,24 @@ namespace ACAD_test
         public ObjectId SlavePolylineID { get; set; } = ObjectId.Null;
         public ObjectId MtextID {  get; set; } = ObjectId.Null;
         public ObjectId AxisPolylineID { get; set; } = ObjectId.Null;
-        List<(int code, string value)> ListXdata { get; set; } = new List<(int code, string value)>();
+        public string AxisHandle { get; set; } = string.Empty;
+        public string Number { get; set; } = string.Empty;
+        public string Material { get; set; } = string.Empty;
+        public string Existence { get; set; } = string.Empty;
+
+        public List<(int code, string value)> ListXdata { get; set; } = new List<(int code, string value)>();
 
         public void Parse(ObjectId objectId)
         {
             ListXdata = AutocadXData.ReadXData(objectId); 
-            if (ListXdata.Count==0) { return; } //  пуостая XData
+            if (ListXdata.Count==0) { return; } //  пустая XData
 
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
 
             Handle tempHandle;
+            string tempString;
 
             using (doc.LockDocument())
             {
@@ -181,9 +204,14 @@ namespace ACAD_test
 
                             MasterPolylineID = objectId;
 
-                            tempHandle = new Handle(Convert.ToInt64(ListXdata[3].value, 16));               // handle slave полилинии
 
-                            if (!string.Equals(tempHandle.ToString(), "0"))                                 // мультилиния
+                            Number = ListXdata[1].value;                                                   // номер 
+
+                            AxisHandle = new Handle(Convert.ToInt64(ListXdata[2].value, 16)).ToString();   // handle привязяанной оси
+
+                            tempHandle = new Handle(Convert.ToInt64(ListXdata[3].value, 16));              // handle slave полилинии
+
+                            if (!string.Equals(tempHandle.ToString(), "0"))                                // мультилиния
                             {
                                 SlavePolylineID = db.GetObjectId(false, tempHandle, 0);                    // Id slave полилинии
                                 Type = TsoddElement.Mline;
@@ -196,6 +224,21 @@ namespace ACAD_test
                             tempHandle = new Handle(Convert.ToInt64(ListXdata[4].value, 16));               // handle mtext
                             MtextID = db.GetObjectId(false, tempHandle, 0);                                 // Id mtext
 
+                            tempString = Convert.ToString(ListXdata[5].value);                              // материал
+                            if (!string.IsNullOrEmpty(tempString)) Material = tempString;
+
+                            tempString = Convert.ToString(ListXdata[6].value);                              // наличие
+                            if (!string.IsNullOrEmpty(tempString))
+                            {
+                                Existence = tempString;
+                                //switch (tempString)
+                                //{
+                                //    case "Нанести": Existence = "Требуется нанести"; break;
+                                //    case "Демаркировать": Existence = "Требуется демаркировать"; break;
+                                //    default: Existence = tempString; break;
+                                //}
+                            }
+
                             break;
 
                         case "slave":
@@ -205,12 +248,14 @@ namespace ACAD_test
 
                             // читаем Xdata у мастер полилинии и берем данные уже из master полилинии
                             ListXdata = AutocadXData.ReadXData(MasterPolylineID);
+                            // если по какой-то причине XDatra master полилинии пустая, то выходим
+                            if (ListXdata.Count == 0) break;
 
-                            tempHandle = new Handle(Convert.ToInt64(ListXdata[3].value, 16));               // handle slave полилинии
+                             tempHandle = new Handle(Convert.ToInt64(ListXdata[3].value, 16));               // handle slave полилинии
 
                             if (!string.Equals(tempHandle.ToString(), "0"))                                 // мультилиния
                             {
-                                SlavePolylineID = db.GetObjectId(false, tempHandle, 0);                    // Id slave полилинии
+                                SlavePolylineID = db.GetObjectId(false, tempHandle, 0);                     // Id slave полилинии
                                 Type = TsoddElement.Mline;
                             }
                             else
@@ -227,12 +272,10 @@ namespace ACAD_test
             }
  
         }
-
-
-
-
-
-
-
     }
+
+
+
+
+
 }

@@ -47,7 +47,7 @@ public static class TsoddCommands
         var ed = doc.Editor;
 
         // Настройки промпта
-        var peo = new PromptEntityOptions("\n Выберите полилинию оси: ");
+        var peo = new PromptEntityOptions("\n Выберите ось: ");
         peo.SetRejectMessage("\n Это не полилиния. Выберите полилинию!");
         peo.AddAllowedClass(typeof(Autodesk.AutoCAD.DatabaseServices.Polyline), exactMatch: false);
 
@@ -70,7 +70,7 @@ public static class TsoddCommands
     [CommandMethod("InsertStand")]
     public static void Cmd_InsertStand()
     {
-       TsoddBlock.InsertStandBlock(TsoddHost.Current.currentStandBlock);
+       TsoddBlock.InsertStandOrMarkBlock(TsoddHost.Current.currentStandBlock);
     }
 
 

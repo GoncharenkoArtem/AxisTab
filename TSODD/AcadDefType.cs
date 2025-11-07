@@ -243,110 +243,12 @@ namespace TSODD
     public static class LineTypeReader
     {
 
-        private static string dllPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-        private static string linPath = Path.Combine(dllPath, "Support", "LineTypes.lin");
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-       
-
-
-
-
-
-            //using (var tr = db.TransactionManager.StartTransaction())
-            //{
-            //    var filter = new SelectionFilter(new TypedValue[] { new TypedValue((int)DxfCode.Operator, "<OR"),
-            //                                                        new TypedValue((int)DxfCode.Start, "LWPOLYLINE"),
-            //                                                        new TypedValue((int)DxfCode.Start, "MULTILEADER"),
-            //                                                        new TypedValue((int)DxfCode.Operator, "OR>")});
-            //    var pso = new PromptSelectionOptions
-            //    {
-            //        MessageForAdding = "\nВыберите полилинии или выноску:",
-            //        SingleOnly = false, // можно выбрать несколько
-            //        AllowDuplicates = false
-            //    };
-
-            //    var psr = ed.GetSelection( pso, filter);
-
-            //    if (psr.Status != PromptStatus.OK) return; // неудачный промпт, выходим
-
-            //    Handle hand = TsoddHost.Current.currentAxis.PolyHandle;
-
-            //    foreach (var id in psr.Value.GetObjectIds())
-            //    {
-            //        // AutocadXData.UpdateXData(id,hand.ToString());
-            //        var ll = AutocadXData.ReadXData(id);
-            //    }
-            //    tr.Commit();
-            //}
-
-
-        //    RefreshLineTypesInAcad();
-
-
-        //}
-
-
-
-        // тестовый метод 2
-        public static void Test2()
-        {
-            //var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-            //var db = doc.Database;
-            //var ed = doc.Editor;
-           
-            
-            
-            //using (var tr = db.TransactionManager.StartTransaction())
-            //{
-            //    var filter = new SelectionFilter(new TypedValue[] { new TypedValue((int)DxfCode.Operator, "<OR"),
-            //                                                        new TypedValue((int)DxfCode.Start, "LWPOLYLINE"),
-            //                                                        new TypedValue((int)DxfCode.Start, "MULTILEADER"),
-            //                                                        new TypedValue((int)DxfCode.Operator, "OR>")});
-            //    var pso = new PromptSelectionOptions
-            //    {
-            //        MessageForAdding = "\nВыберите полилинии или выноску:",
-            //        SingleOnly = false, // можно выбрать несколько
-            //        AllowDuplicates = false
-            //    };
-
-            //    var psr = ed.GetSelection(pso, filter);
-
-            //    if (psr.Status != PromptStatus.OK) return; // неудачный промпт, выходим
-
-            //    Handle hand = TsoddHost.Current.currentAxis.PolyHandle;
-
-            //    foreach (var id in psr.Value.GetObjectIds())
-            //    {
-            //       var dd = AutocadXData.ReadXData(id);
-            //    }
-
-            //    tr.Commit();
-            //}
-
-
-        }
-
-
-
         // метод парсит список типов линий
         public static List<IAcadDef> Parse()
         {
             List<IAcadDef> result = new List<IAcadDef>();
 
-            if (!File.Exists(linPath))
+            if (!File.Exists(FilesLocation.linPath))
             {
                 MessageBox.Show("Ошибка чтения файла с типами линий");
                 return null;
@@ -354,7 +256,7 @@ namespace TSODD
 
             IAcadDef current = null;
 
-            foreach (var raw in File.ReadLines(linPath))
+            foreach (var raw in File.ReadLines(FilesLocation.linPath))
             {
                 var line = raw.Trim();
                 if (string.IsNullOrEmpty(line)) continue;       // пропускаем пустыке строки
@@ -395,11 +297,10 @@ namespace TSODD
         }
 
 
-
-
         // метод добавляет тип линии или мультилинии в БД
-        public static void AddLineTypeToBD(IAcadDef acadLineType)
+        public static void AddLineTypeToBD(IAcadDef acadLineType, bool messageOK = false)
         {
+
             // если параметры линии не заполнены, то выходим
             if (acadLineType.IsReadyForAdding() == false)
             {
@@ -434,7 +335,7 @@ namespace TSODD
                 }
 
                 // Цвета линии
-                txt += $"\nС";
+                txt += $"\nC";
                 foreach (var color in lt.ColorIndex) txt += $",{color}";
 
                 // Толщины линии 
@@ -463,8 +364,17 @@ namespace TSODD
             }
             
             // запись в файл
-            File.AppendAllText(linPath, txt, new UTF8Encoding(false));
+            File.AppendAllText(FilesLocation.linPath, txt, new UTF8Encoding(false));
+
+            // обновляем типы линии в автокаде
+            RefreshLineTypesInAcad();
+
+            // обновляем типы линии на ribbon
+            RibbonInitializer.Instance.ListOfMarksLinesLoad(200, 20);
+
+            if (messageOK) MessageBox.Show($"Тип линии с наименованием \"{acadLineType.Name}\" успешно добавлен в БД");
         } 
+
 
         // метод удаляет объект типа линии или мультилинии
         public static void DeleteLineTypeFromBDs(string name)
@@ -485,6 +395,19 @@ namespace TSODD
             // если это простой тип линии
             if (lineType is AcadLineType al)
             {
+                // проверка на то, что тип линии используется 
+                foreach (var acadDef in listOfLineTypes)
+                {
+                    if (acadDef is AcadMLineType acadMline) 
+                    {
+                        if (acadMline.MLineLineTypes.Any(l => l.Name == name)) 
+                        {
+                            MessageBox.Show($"Ошибка удаления типа линии. Тип линии \"{name}\" используется в двойной линии \"{acadMline.Name}\".");
+                            return;
+                        }
+                    }
+                }
+
                 if (DeleteLineTypeFromAcad(name) == false)      // беда - не получилось удалить 
                 {
                     MessageBox.Show($"Не получилось удалить тип линии \"{name}\". Вероятно он используется в таких элементах как блок или внешняя ссылка.");
@@ -498,21 +421,12 @@ namespace TSODD
             // если это тип мультилинии
             if (lineType is AcadMLineType aml)
             {
-                foreach (var type in aml.MLineLineTypes)
-                {
-                    if (type.IsMlineElement)
-                    {
-                        DeleteLineTypeFromAcad(type.Name);
-                        searchVal = listOfLineTypes.FirstOrDefault(l => l.Name == type.Name);
-                        if (searchVal != null) listOfLineTypes.Remove(searchVal);
-                    }
-                }
-                searchVal = listOfLineTypes.FirstOrDefault(l => l.Name == name);
-                if (searchVal != null) listOfLineTypes.Remove(searchVal);
+                    searchVal = listOfLineTypes.FirstOrDefault(l => l.Name == name);
+               if (searchVal != null) listOfLineTypes.Remove(searchVal);
             }
 
             // очищаем текущий файл типов линий
-            File.WriteAllText(linPath, string.Empty);
+            File.WriteAllText(FilesLocation.linPath, string.Empty);
             foreach (var obj in listOfLineTypes)
             {
                 AddLineTypeToBD(obj);
@@ -520,18 +434,14 @@ namespace TSODD
         }
 
 
-
         // метод обновляет типы линии в автокаде
-        public static void RefreshLineTypesInAcad()
+        public static void  RefreshLineTypesInAcad()
         {
         var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
         var db = doc.Database;
       
         // список всех типов линий (кастомных конечно)
         var listOfLineTypes = Parse();
-
-        // путь к временному файлу LIN
-        string bakPath = Path.Combine(dllPath, "Support", "TempLineTypes.lin");
 
         // список со всеми типами линий, учитывая паттерны штриховки
         List<string> tempList = new List<string>();
@@ -569,7 +479,7 @@ namespace TSODD
             }
 
             // запись всех типов линий с учетом всех паттернов штриховки
-            File.WriteAllLines(bakPath, tempList);
+            File.WriteAllLines(FilesLocation.tempLinPath, tempList);
 
             foreach (var lineType in tempNameList)
             {
@@ -579,17 +489,12 @@ namespace TSODD
                     {
                         var ltt = (LinetypeTable)tr.GetObject(db.LinetypeTableId, OpenMode.ForRead);
 
-                        if (!ltt.Has(lineType))
-                        {
-                            db.LoadLineTypeFile(lineType, bakPath);    // грузим тип линии в автокад
-                        }
-
+                        if (!ltt.Has(lineType)) db.LoadLineTypeFile(lineType, FilesLocation.tempLinPath);    // грузим тип линии в автокад
                         tr.Commit();
                     }
                 }
             }
         }
-
 
 
         public static bool DeleteLineTypeFromAcad(string name)
@@ -667,10 +572,58 @@ namespace TSODD
                         ltr.Erase(true);
                         tr.Commit();
                         return true;
-
                 }
             }
         }
+
+
+        public static ObjectId[] CollectMarkLineTypeID(bool onlyMaster)
+        {
+            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
+            var ed = doc.Editor;
+
+            SelectionFilter filter;
+            if (onlyMaster)
+            {
+                filter = new SelectionFilter(new TypedValue[]
+                      {
+                      new TypedValue((int)DxfCode.ExtendedDataRegAppName,AutocadXData.AppName),
+                      new TypedValue((int)DxfCode.ExtendedDataAsciiString,"master")
+                      });
+            }
+            else
+            {
+                filter = new SelectionFilter(new TypedValue[]
+                      {
+                      new TypedValue((int)DxfCode.ExtendedDataRegAppName,AutocadXData.AppName),
+                      new TypedValue((int)DxfCode.ExtendedDataAsciiString,"master,slave")
+                      });
+            }
+
+            using (doc.LockDocument())
+            using (var tr = db.TransactionManager.StartTransaction())
+            {
+                // поиск с учетом фильтра
+                var selection = ed.SelectAll(filter);
+
+                if (selection.Status != PromptStatus.OK)    // неудачный поиск
+                {
+                    ed.WriteMessage("\n В чертеже не найдено разметки в виде линий \n");
+                    return new ObjectId[0];
+                }
+                else
+                {
+                    return selection.Value.GetObjectIds();
+                }
+            }
+
+        }
+
+
+
+
+
 
 
     }

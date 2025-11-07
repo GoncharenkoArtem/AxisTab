@@ -154,11 +154,42 @@
     <Reference Include="PresentationFramework" />
   </ItemGroup>
   <ItemGroup>
-    <Page Include="MainWindow.xaml">
+    <Page Include="Forms\LoadBlockForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\ExportEndForm.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="Blocks.cs" />
+    <Compile Include="Class1.cs" />
+    <Compile Include="FilesLocation.cs" />
+    <Compile Include="Forms\LineTypeForm.xaml.cs">
+      <DependentUpon>LineTypeForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\ColorsGallery.xaml.cs">
+      <DependentUpon>ColorsGallery.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\GroupsAddForm.xaml.cs">
+      <DependentUpon>GroupsAddForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\InsertBlockForm.xaml.cs">
+      <DependentUpon>InsertBlockForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\QuikSelectionForm.xaml.cs">
+      <DependentUpon>QuikSelectionForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\SelectionForm.xaml.cs">
+      <DependentUpon>SelectionForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="JSON.cs" />
+    <Compile Include="Forms\LoadBlockForm.xaml.cs">
+      <DependentUpon>LoadBlockForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Forms\UserOptions.xaml.cs">
+      <DependentUpon>UserOptions.xaml</DependentUpon>
+    </Compile>
     <Compile Include="XData.cs" />
     <Compile Include="ExportExcel.cs" />
     <Compile Include="AcadDefType.cs" />
@@ -168,10 +199,38 @@
     <Compile Include="Main Class.cs" />
     <Compile Include="Aixs.cs" />
     <Compile Include="Ribbon.cs" />
-    <Compile Include="MainWindow.xaml.cs">
-      <DependentUpon>MainWindow.xaml</DependentUpon>
+    <Compile Include="Forms\ExportEndForm.xaml.cs">
+      <DependentUpon>ExportEndForm.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Forms\LineTypeForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\ColorsGallery.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\GroupsAddForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\InsertBlockForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\QuikSelectionForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\SelectionForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\UserOptions.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">
@@ -203,18 +262,98 @@
     </None>
   </ItemGroup>
   <ItemGroup>
-    <Resource Include="images\i20.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="images\i20_small.png" />
-  </ItemGroup>
-  <ItemGroup>
-    <Resource Include="images\bmp.bmp" />
-  </ItemGroup>
-  <ItemGroup>
     <WCFMetadata Include="Connected Services\" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Images\axis_newPK.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\axis_startPoint.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\axis_name.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\stand_bindToAxis.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\axis_getPK.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\blocks_loadToBD.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\lineType_loadToBD.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\insertBlock.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\xls_export_signs.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\quickProperties_ON.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\userBlock.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\quickProperties_OFF.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\axis_new.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\axis_setPK.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\block_insert.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\block_user.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\lineType_invertLines.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\lineType_invertText.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\options.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\selectionObjects.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\mleader.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\xls_export_marks.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\groups.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\arrow.png" />
+    <Resource Include="Images\delete.png" />
+    <Resource Include="Images\plus.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\cock_1.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\cloud_left.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\cock_2.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Resource Include="Images\cloud_left_2.png" />
+    <Resource Include="Images\cloud_right.png" />
+    <Resource Include="Images\cloud_right_2.png" />
+    <Resource Include="Images\cock_3.png" />
+    <Resource Include="Images\cock_4.png" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
     <PostBuildEvent>xcopy "$(TargetPath)" "%25AppData%25\Autodesk\ApplicationPlugins\IterisTSODD.bundle\Contents\" /y</PostBuildEvent>

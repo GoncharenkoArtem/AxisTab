@@ -17,6 +17,10 @@ using static System.Net.Mime.MediaTypeNames;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using Autodesk.AutoCAD.Windows;
 using System.Xml.Linq;
+using TSODD.forms;
+using TSODD.Forms;
+using System.IO;
+using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
 
 
 namespace ACAD_test
@@ -25,12 +29,14 @@ namespace ACAD_test
     {
         public static RibbonInitializer Instance { get; private set; }
         private RibbonCombo axisCombo = new RibbonCombo();
-        public RibbonCombo signsGroups = new RibbonCombo();
-        public RibbonCombo marksCombo = new RibbonCombo();
+        //public RibbonCombo signsGroups = new RibbonCombo();
+        //public RibbonCombo marksCombo = new RibbonCombo();
 
-        private RibbonSplitButton splitStands = new RibbonSplitButton();
-        private RibbonSplitButton splitSigns = new RibbonSplitButton();
+        public RibbonSplitButton splitStands = new RibbonSplitButton();
+        //private RibbonSplitButton splitSigns = new RibbonSplitButton();
         public RibbonSplitButton splitMarksLineTypes = new RibbonSplitButton();
+        public RibbonButton quickProperties = new RibbonButton();
+
 
         public RibbonRowPanel rowLineType = new RibbonRowPanel();
         private RibbonCombo comboLineTypePattern_1 = new RibbonCombo();
@@ -42,19 +48,18 @@ namespace ACAD_test
         private RibbonCombo comboLineTypeOffset = new RibbonCombo();
         private RibbonLabel labelLineType = new RibbonLabel(); 
 
-
         //  private RibbonSplitButton splitMarks = new RibbonSplitButton();
 
-
         public RibbonPanelSource panelSourceMarks;
-
-
 
         private static readonly HashSet<IntPtr> _dbIntPtr = new HashSet<IntPtr>();
         private readonly HashSet<ObjectId> _dontDeleteMe = new HashSet<ObjectId>();
         private readonly HashSet<ObjectId> _deleteMe = new HashSet<ObjectId>();
 
         private bool _marksLineTypeFlag = true;
+        public bool readyToDeleteEntity = true;
+        public bool quickPropertiesOn = false;
+        public SelectionFormBlocks selectioForm = null;
 
 
         public void Initialize()
@@ -68,7 +73,10 @@ namespace ACAD_test
             var dm = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager;
             dm.DocumentActivated += Dm_DocumentActivated;
             dm.DocumentToBeDestroyed += Dm_DocumentToBeDestroyed;
+         
         }
+
+   
 
         public void Terminate()
         {
@@ -89,6 +97,7 @@ namespace ACAD_test
                 db.ObjectErased -= Db_ObjectErased;
                 d.CommandEnded -= MdiActiveDocument_CommandEnded;
                 d.CommandCancelled -= MdiActiveDocument_CommandEnded;
+                d.Editor.PromptForSelectionEnding -= Editor_PromptForSelectionEnding;
 
                 _dbIntPtr.Remove(key);
             }
@@ -101,22 +110,11 @@ namespace ACAD_test
                 ComponentManager.ItemInitialized -= OnItemInitialized;
                 axisCombo.CurrentChanged += AxisCombo_CurrentChanged;
                 splitStands.CurrentChanged += SplitStands_CurrentChanged;
-                splitSigns.CurrentChanged += SplitSigns_CurrentChanged;
-                signsGroups.CurrentChanged += SignsGroups_CurrentChanged;
 
                 AddRibbonPanel();
 
-                // предвыбор значений выпадающих списков
-                // группа знаков
-                if (signsGroups.Items.Count > 0)
-                {
-                    var currSignGroup = signsGroups.Items[0] as RibbonButton;
-                    TsoddHost.Current.currentSignGroup = currSignGroup.Text ;
-                }
-                // стойка
-                if (splitStands.Items.Count > 0) TsoddHost.Current.currentStandBlock = splitStands.Items[0].Text;
-                // знак
-                if (splitSigns.Items.Count > 0) TsoddHost.Current.currentSignBlock = splitSigns.Items[0].Text;
+                // предвыбор значений
+                TsoddBlock.PreSelectOfGroups();
 
                 // внутренний метод, который первоначально настраивает RibbonSplitButton
                 void InitializeSplitButtons(RibbonSplitButton split, string name)
@@ -133,17 +131,13 @@ namespace ACAD_test
                 InitializeSplitButtons(splitStands, "Стойки");
                 // заполняем 
                 FillBlocksMenu(splitStands, "STAND");
-                // настраиваем контрол со знаками
-                InitializeSplitButtons(splitSigns, "Знаки");
-                // заполняем 
-                FillBlocksMenu(splitSigns, "SIGN", TsoddHost.Current.currentSignGroup);
+                
                 // обновляем  элементы LineType
                 ListOfMarksLinesLoad(200, 20);
                 LineTypeReader.RefreshLineTypesInAcad();
             }
         }
 
-   
 
         private void AddRibbonPanel()
         {
@@ -184,9 +178,10 @@ namespace ACAD_test
                 Name = "NEWAXIS",
                 Text = "Новая ось",
                 ShowText = true,
-                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/i20.png"),
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/axis_new.png"),
                 Orientation = Orientation.Vertical,
                 Size = RibbonItemSize.Large,
+
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     NewAxis();
@@ -198,9 +193,9 @@ namespace ACAD_test
             var rowAxis = new RibbonRowPanel();
 
             // список combobox с осями 
-            axisCombo.Text = " Текущая ось ";
+            axisCombo.Text = " Текущая:";
             axisCombo.ShowText = true;
-            axisCombo.Width = 210;
+            axisCombo.Width = 150;
             rowAxis.Items.Add(axisCombo);
 
             // Перенос на новую строку внутри этой же группы
@@ -209,31 +204,35 @@ namespace ACAD_test
             //  Кнопка изменения имени оси
             var bt_changeName = new RibbonButton
             {
-                Text = "Редактировать имя оси",
+                Text = "Имя оси",
                 ShowText = true,
                 Size = RibbonItemSize.Standard,
                 Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
+                Image = LoadImage("pack://application:,,,/TSODD;component/images/axis_name.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     TsoddCommands.Cmd_AxisName();
                 })
             };
 
+
     
             // Кнопка изменения начальной точки
             var bt_startPoint = new RibbonButton
             {
-                Text = "Редактировать начальную точку ",
+                Text = "Начальная точка оси",
                 ShowText = true,
                 Size = RibbonItemSize.Standard,
                 Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
+                Image = LoadImage("pack://application:,,,/TSODD;component/images/axis_startPoint.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     TsoddCommands.Cmd_AxisStartPoint();
                 })
             };
+
+
+
 
             // Кнопки рядом + разделитель между ними
             rowAxis.Items.Add(bt_changeName);
@@ -245,7 +244,39 @@ namespace ACAD_test
             // добавляем группу "ось" в панель
             panelSourceAxis.Items.Add(rowAxis);
 
-        
+            panelSourceAxis.Items.Add(new RibbonSeparator());
+
+            // Кнопка Отбить ПК
+            var bt_setPK = new RibbonButton
+            {
+                Text = "Назначить ПК",
+                ShowText = true,
+                Size = RibbonItemSize.Large,
+                Orientation = Orientation.Vertical,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/axis_setPK.png"),
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    SetPkOnAxis();
+                })
+            };
+
+            // Кнопка Отбить ПК
+            var bt_getPK = new RibbonButton
+            {
+                Text = "Получить ПК",
+                ShowText = true,
+                Size = RibbonItemSize.Large,
+                Orientation = Orientation.Vertical,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/axis_getPK.png"),
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    GetPkOnAxis();
+                })
+            };
+
+            panelSourceAxis.Items.Add(bt_setPK);
+            panelSourceAxis.Items.Add(bt_getPK);
+
             /* ************************************************           СТОЙКИ            ************************************************ */
 
             RibbonPanelSource panelSourceStands = new RibbonPanelSource
@@ -259,227 +290,72 @@ namespace ACAD_test
             };
             tab.Panels.Add(panel_2);
 
-      
             // добавляем на ribbon
             panelSourceStands.Items.Add(splitStands);
-
-            // кнопки для стоек
-            var rowStandButtons = new RibbonRowPanel();
 
             // кнопка перепривязки стоек к оси
             RibbonButton axisBinding = new RibbonButton
             {
-                Text = "Привязка к оси",
+                Text = "Привязать к оси",
                 ShowText = true,
-                Size = RibbonItemSize.Standard,
-                Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
+                Size = RibbonItemSize.Large,
+                Orientation = Orientation.Vertical,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/stand_bindToAxis.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     TsoddBlock.ReBindStandBlockToAxis();
           
                 })
             };
-            rowStandButtons.Items.Add(axisBinding);
-            rowStandButtons.Items.Add(new RibbonRowBreak());
 
-            // добавить блок стойки в базу
-            RibbonButton loadBlockToBD = new RibbonButton {
-                Text = "Добавть стойку",
-                ShowText = true,
-                Size = RibbonItemSize.Standard,
-                Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
-                CommandHandler = new RelayCommandHandler(() =>
-                {
-                    // подгрузка блоков в БД
-                    string blockName = TsoddBlock.AddBlockToBD("STAND_TEMPLATE");
-                    // пересобираем список
-                    splitStands.Items.Clear();
-                    FillBlocksMenu(splitStands, "STAND", blockName);
+            panelSourceStands.Items.Add(axisBinding);
 
-                })
-            };
-            rowStandButtons.Items.Add(loadBlockToBD);
-            rowStandButtons.Items.Add(new RibbonRowBreak());
 
-            // добавить блок в базу
-            RibbonButton deleteStandFromBD = new RibbonButton
+            /* ************************************************           БЛОКИ            ************************************************ */
+
+            RibbonPanelSource panelSourceBlocks = new RibbonPanelSource
             {
-                Text = "Удалить стойку",
-                ShowText = true,
-                Size = RibbonItemSize.Standard,
-                Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
-                CommandHandler = new RelayCommandHandler(() =>
-                {
-                    // удаление блоков из БД
-                    string blockName = String.Empty;
-                    if (splitStands.Current != null)
-                    {
-                        blockName = splitStands.Current.Text;
-                    }
-                    else 
-                    {
-                        return; // имени блока нет, выходим
-                    }
-
-                    TsoddBlock.DeleteBlockFromBD(blockName);
-                    
-                    // пересобираем список
-                    splitStands.Items.Clear();
-                    FillBlocksMenu(splitStands, "STAND");
-
-                    // первый элемент
-                    var firstElement = splitStands.Items.FirstOrDefault();
-                    if(firstElement!=null) splitStands.Current = firstElement;
-
-
-                })
-            };
-            rowStandButtons.Items.Add(deleteStandFromBD);
-            rowStandButtons.Items.Add(new RibbonRowBreak());
-
-            panelSourceStands.Items.Add(rowStandButtons);
-
-            /* ************************************************           ЗНАКИ            ************************************************ */
-
-            RibbonPanelSource panelSourceSigns = new RibbonPanelSource
-            {
-                Title = "Знаки"
+                Title = "Блоки"
             };
 
             RibbonPanel panel_3 = new RibbonPanel
             {
-                Source = panelSourceSigns
+                Source = panelSourceBlocks
             };
             tab.Panels.Add(panel_3);
 
-      
-            var rowSignsGroup = new RibbonRowPanel();
-            var rowSignsGroup_1 = new RibbonRowPanel();
-            var rowSignsGroup_2 = new RibbonRowPanel();
-
-            // список combobox с группами знаков
-            signsGroups.Text = "Группа знаков ";
-            signsGroups.ShowText = true;
-            signsGroups.Width = 280;
-            rowSignsGroup.Items.Add(signsGroups);
-
-
-            // заполняем комбобокс с группами знаков
-            TsoddBlock.FillSignsGroups();
-
-            // Перенос на новую строку внутри этой же группы
-            rowSignsGroup.Items.Add(new RibbonRowBreak());
-
-            //  Кнопка добавления группы
-            var bt_AddGroup = new RibbonButton
+            // вставка блока
+            RibbonButton insertBlock = new RibbonButton
             {
-                Text = "Добавить группу",
+                Text = "Вставить блок",
                 ShowText = true,
-                MinWidth = 140,
-                
-                Size = RibbonItemSize.Standard,
-                Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
+                Size = RibbonItemSize.Large,
+                Orientation = Orientation.Vertical,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/block_insert.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    TsoddBlock.AddSignGroupToBD();
-                })
-            };
-
-            // Кнопка удаления группы
-            var bt_DeleteGroup = new RibbonButton
-            {
-                Text = " Удалить группу",
-                ShowText = true,
-                MinWidth = 140,
-                Size = RibbonItemSize.Standard,
-                Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
-                CommandHandler = new RelayCommandHandler(() =>
-                {
-
-                    TsoddBlock.DeleteSignGroupFromBD(TsoddHost.Current.currentSignGroup);
-                })
-            };
-
-            // Кнопки рядом + разделитель между ними
-            rowSignsGroup_1.Items.Add(bt_AddGroup);
-            rowSignsGroup_1.Items.Add(new RibbonRowBreak());
-            rowSignsGroup_1.Items.Add(bt_DeleteGroup);
-
-            // добавить блок знака в БД
-            var bt_addSignToBD = new RibbonButton
-            {
-                Text = "Добавить знак",
-                ShowText = true,
-                MinWidth = 140,
-                Size = RibbonItemSize.Standard,
-                Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
-                CommandHandler = new RelayCommandHandler(() =>
-                {
-                    // подгрузка блоков в БД
-                    string blockName = TsoddBlock.AddBlockToBD("SIGN_TEMPLATE");
-                    // пересобираем список
-                    splitSigns.Items.Clear();
-                    FillBlocksMenu(splitSigns, "SIGN", blockName);
-                })
-            };
-
-            // Удалить блок знака из БД
-            var bt_deleteSignFromBD = new RibbonButton
-            {
-                Text = "Удалить знак",
-                ShowText = true,
-                MinWidth = 140,
-                Size = RibbonItemSize.Standard,
-                Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/TSODD;component/images/i20_small.png"),
-                CommandHandler = new RelayCommandHandler(() =>
-                {
-                    // удаление блоков из БД
-                    string blockName = String.Empty;
-                    if (splitSigns.Current != null)
-                    {
-                        blockName = splitSigns.Current.Text;
-                    }
-                    else
-                    {
-                        return; // имени блока нет, выходим
-                    }
-
-                    TsoddBlock.DeleteBlockFromBD(blockName);
-
-                    // пересобираем список
-                    splitSigns.Items.Clear();
-                    FillBlocksMenu(splitSigns, "SIGN", TsoddHost.Current.currentSignGroup);
-                    splitSigns.ListStyle = RibbonSplitButtonListStyle.Descriptive;
-
-                    // первый элемент
-                    var firstElement = splitSigns.Items.FirstOrDefault();
-                    if (firstElement != null) splitSigns.Current = firstElement;
+                    InsertBlockForm insertBlockForm = new InsertBlockForm();
+                    insertBlockForm.ShowDialog();
 
                 })
             };
+            panelSourceBlocks.Items.Add(insertBlock);
 
+            // вставка блока
+            RibbonButton userBlock = new RibbonButton
+            {
+                Text = "Пользовательский",
+                ShowText = true,
+                Size = RibbonItemSize.Large,
+                Orientation = Orientation.Vertical,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/block_user.png"),
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    TsoddBlock.CreateUserMarkBlock();
 
-            rowSignsGroup_2.Items.Add(bt_addSignToBD);
-            rowSignsGroup_2.Items.Add(new RibbonRowBreak());
-            rowSignsGroup_2.Items.Add(bt_deleteSignFromBD);
-
-            rowSignsGroup.Items.Add(rowSignsGroup_1);
-            rowSignsGroup.Items.Add(rowSignsGroup_2);
-
-            // добавляем группу в панель
-            panelSourceSigns.Items.Add(rowSignsGroup);
-
-            // добавляем на ribbon
-            panelSourceSigns.Items.Add(splitSigns);
-
-
+                })
+            };
+            panelSourceBlocks.Items.Add(userBlock);
 
             /* ************************************************          РАЗМЕТКА            ************************************************ */
 
@@ -494,14 +370,13 @@ namespace ACAD_test
             };
             tab.Panels.Add(panel_4);
 
-            splitMarksLineTypes.Width = 80;
+            splitMarksLineTypes.Width = 60;
             splitMarksLineTypes.Size = RibbonItemSize.Large;
             splitMarksLineTypes.IsSplit = true;
             panelSourceMarks.Items.Add(splitMarksLineTypes);
 
             // типы линий
-            //rowLineType = new RibbonRowPanel();
-            
+
             // первый тип линии
             var rowLineType_1 = new RibbonRowPanel();
             comboLineTypePattern_1.Width = 105;
@@ -546,329 +421,235 @@ namespace ACAD_test
 
             panelSourceMarks.Items.Add(rowLineType);
 
-            var bt_newB = new RibbonButton
+            panelSourceMarks.Items.Add(new RibbonSeparator());
+
+            var bt_invertLineType = new RibbonButton
             {
                 Name = "",
-                Text = "TEMP",
+                Text = "Инвертировать",
                 ShowText = true,
-                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/i20.png"),
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/lineType_invertLines.png"),
                 Orientation = Orientation.Vertical,
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                   // ListOfMarksLinesLoad(200,20);
-                   // LineTypeReader.Test();
-                   
+                    LineTypeInvert();
                 })
             };
+            panelSourceMarks.Items.Add(bt_invertLineType);
 
-            panelSourceMarks.Items.Add(bt_newB);
 
-            var bt_newC = new RibbonButton
+            var bt_invertTextPosition = new RibbonButton
             {
                 Name = "",
-                Text = "TEMP2",
+                Text = "Переставить текст",
                 ShowText = true,
-                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/i20.png"),
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/lineType_invertText.png"),
                 Orientation = Orientation.Vertical,
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    //ListOfMarksLinesLoad(200,20);
-                    //LineTypeReader.Test();
-                    LineTypeReader.Test2();
-
-
+                     LineTypeTextInvert();
                 })
             };
+            panelSourceMarks.Items.Add(bt_invertTextPosition);
 
-            panelSourceMarks.Items.Add(bt_newC);
 
-            /* ************************************************          Выбор            ************************************************ */
+            /* ************************************************          НАСТРОЙКИ и БД            ************************************************ */
 
-            RibbonPanelSource panelSourcePick = new RibbonPanelSource
+            RibbonPanelSource panelSourceOptions = new RibbonPanelSource
             {
-                Title = "Выбор"
+                Title = "Настройки и БД"
             };
 
-            RibbonPanel panel_5= new RibbonPanel
-
+            RibbonPanel panel_5 = new RibbonPanel
             {
-                Source = panelSourcePick
+                Source = panelSourceOptions
             };
             tab.Panels.Add(panel_5);
 
-            /* ************************************************          Экспорт            ************************************************ */
-
-            RibbonPanelSource panelSourceExport = new RibbonPanelSource
+            var bt_options = new RibbonButton
             {
-                Title = "Экспорт"
+                Name = "",
+                Text = "Настройки",
+                ShowText = true,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/options.png"),
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    //soddBlock.BuildTemplateDWG();
+                    // LineTypeTextInvert();
+                    //ExportEnd exportEnd = new ExportEnd();
+                    //exportEnd.ShowDialog();
+
+                    OptionsForm optionsForm = new OptionsForm();
+                    optionsForm.ShowDialog();
+                })
+            };
+            panelSourceOptions.Items.Add(bt_options);
+
+            var bt_addBlockToBD = new RibbonButton
+            {
+                Name = "",
+                Text = "Загрузить блок",
+                ShowText = true,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/blocks_loadToBD.png"),
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    LoadBlock loadBlockForm = new LoadBlock();
+                    loadBlockForm.ShowDialog();
+                })
+            };
+            panelSourceOptions.Items.Add(bt_addBlockToBD);
+
+            var bt_addLineTypeToBD = new RibbonButton
+            {
+                Name = "",
+                Text = "Создать разметку",
+                ShowText = true,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/lineType_loadToBD.png"),
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    LineTypeForm lineTypeForm = new LineTypeForm();
+                    lineTypeForm.ShowDialog();
+                })
+            };
+            panelSourceOptions.Items.Add(bt_addLineTypeToBD);
+
+
+            var bt_addGroups = new RibbonButton
+            {
+                Name = "",
+                Text = "Группы",
+                ShowText = true,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/groups.png"),
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    GroupsAddForm groupsAddForm = new GroupsAddForm();  
+                    groupsAddForm.ShowDialog();
+                })
+            };
+            panelSourceOptions.Items.Add(bt_addGroups);
+
+
+            //* ************************************************          РЕДАКТИРОВАНИЕ            ************************************************ */
+
+            RibbonPanelSource panelSourceSelection = new RibbonPanelSource
+            {
+                Title = "Выбор и редактирование"
             };
 
             RibbonPanel panel_6 = new RibbonPanel
             {
-                Source = panelSourceExport
+                Source = panelSourceSelection
             };
             tab.Panels.Add(panel_6);
 
 
-            // Удалить блок знака из БД
-            var bt_exportExcel = new RibbonButton
+            var bt_quickSelection = new RibbonButton
             {
-                Text = "Эксопрт в Excel",
+                Name = "",
+                Text = "Выбор объектов",
                 ShowText = true,
-                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/i20.png"),
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/selectionObjects.png"),
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    ObjectSelectionForm objectSelectionForm = new ObjectSelectionForm();
+                    objectSelectionForm.ShowDialog();
+                })
+            };
+            panelSourceSelection.Items.Add(bt_quickSelection);
+
+            var bt_mleader = new RibbonButton
+            {
+                Name = "",
+                Text = "Выноска",
+                ShowText = true,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/mleader.png"),
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    CreateMLeaderForTsoddObject();
+                })
+            };
+            panelSourceSelection.Items.Add(bt_mleader);
+
+
+            quickProperties.Name = "";
+            quickProperties.Text = "Свойства";
+            quickProperties.ShowText = true;
+            quickProperties.LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/quickProperties_OFF.png");
+            quickProperties.Orientation = Orientation.Vertical;
+            quickProperties.Size = RibbonItemSize.Large;
+            quickProperties.CommandHandler = new RelayCommandHandler(() =>
+            {
+                quickPropertiesOn = !quickPropertiesOn;
+                if (quickPropertiesOn) { quickProperties.LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/quickProperties_ON.png"); }
+                else { quickProperties.LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/quickProperties_OFF.png"); }
+
+            });
+            panelSourceSelection.Items.Add(quickProperties);
+
+
+
+            ///* ************************************************          Экспорт            ************************************************ */
+
+            RibbonPanelSource panelSourceExport = new RibbonPanelSource
+            {
+                Title = "Экспорт ведомостей"
+            };
+
+            RibbonPanel panel_7 = new RibbonPanel
+            {
+                Source = panelSourceExport
+            };
+            tab.Panels.Add(panel_7);
+
+      
+            var bt_exportExcelSigns = new RibbonButton
+            {
+                Text = "Знаки",
+                ShowText = true,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/xls_export_signs.png"),
                 Orientation = Orientation.Vertical,
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     var export = new ExportExcel();
-                    export.CreateTableHeader();
                     export.ExportSigns();
-
                 })
             };
 
-            panelSourceExport.Items.Add(bt_exportExcel);
+            panelSourceExport.Items.Add(bt_exportExcelSigns);
 
+            var bt_exportExcelMarks = new RibbonButton
+            {
+                Text = "Разметка",
+                ShowText = true,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/xls_export_marks.png"),
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    var export = new ExportExcel();
+                    export.ExportMarks();
+                })
+            };
 
+            panelSourceExport.Items.Add(bt_exportExcelMarks);
 
-
-
-
-
-
-
-
-
-
-            //var rowStands = new RibbonRowPanel();
-
-
-            //var splitStands = new RibbonSplitButton
-            //{
-            //    Text = "Стойки",
-            //    Size = RibbonItemSize.Large,
-            //    Orientation = Orientation.Vertical,
-            //    IsSplit = true, // раскрывающееся меню
-            //    ShowText = true,
-
-            //    Width = 100
-
-
-            //splitSigns
-            //{
-            //    Text = "Знаки",
-            //    Size = RibbonItemSize.Large,
-            //    Orientation = Orientation.Vertical,
-            //    IsSplit = true, // раскрывающееся меню
-            //                    //ShowText = true,
-            //    MinHeight = 80,
-            //    Height = 80,
-
-            //    Width = 100
-            //};
-
-
-            //FillBlocksMenu(splitSigns, "SIGN");
-
-            //panelSourceStands.Items.Add(splitSigns);
-
-
-            //var newlist = GetListOfBlocks("SIGN");
-
-            //// 1) Большая превью-кнопка (вставляет текущий блок)
-            //RibbonButton _previewBtn = new RibbonButton
-            //{
-            //    Text = "(не выбрано)",
-            //    ShowText = false,
-            //    Size = RibbonItemSize.Large,
-            //    Orientation = Orientation.Horizontal,
-            //    LargeImage = newlist[0].img,
-            //    Height = 100,
-            //    Width = 100
-
-
-            //};
-            //_previewBtn.CommandHandler = new RelayCommandHandler(() =>
-            //{
-            //    //if (!string.IsNullOrEmpty(_currentBlockName))
-            //    //    InsertBlockByName(_currentBlockName);
-            //});
-            //panelSourceStands.Items.Add(_previewBtn);
-
-            //// перенос строки, чтобы маленькая была «под» большой (или не добавляй — будет справа)
-            //panelSourceStands.Items.Add(new RibbonRowBreak());
-
-            //// 2) Маленькая кнопка-список (вся кнопка открывает меню)
-            //var ddBlocks = new RibbonSplitButton
-            //{
-            //    Text = "Выбрать…",         // можно без текста и с иконкой «стрелка»
-            //    ShowText = true,
-            //    Size = RibbonItemSize.Standard,
-            //    Orientation = Orientation.Horizontal,
-            //    IsSplit = false            // 👈 важное: нет «верх-низ», вся кнопка — дропдаун
-            //};
-
-            //FillBlocksMenu(ddBlocks, "SIGNS");
-            //panelSourceStands.Items.Add(ddBlocks);
 
         }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-        //// допустим, у тебя уже есть panelSourceAxis и combo:
-        //var blocksCombo = new RibbonCombo
-        //{
-        //    Text = "Блок",
-        //    ShowText = true,
-        //    Width = 220
-        //};
-
-        //// заполняем блоками из текущей базы
-        //var db = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument.Database;
-
-        //using (var tr = db.TransactionManager.StartTransaction())
-        //{
-        //    var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-        //    foreach (ObjectId id in bt)
-        //    {
-        //        var btr = (BlockTableRecord)tr.GetObject(id, OpenMode.ForRead);
-        //        // пропустим служебные/анонимные/пространства
-        //        if (btr.IsLayout || btr.IsAnonymous || btr.Name == BlockTableRecord.ModelSpace || btr.Name == BlockTableRecord.PaperSpace)
-        //            continue;
-
-        //        var bmp = TsoddBlock.GetBlockPreviewBitmap(btr);
-        //        var img = TsoddBlock.ToImageSource(bmp);
-
-        //        var item = new RibbonButton
-        //        {
-        //            Text = btr.Name,
-        //            ShowText = true,
-        //            ShowImage = img != null,
-        //            //Image = img,                      // маленькая картинка в выпадающем списке
-        //            LargeImage = img,                   // на всякий
-        //            Size = RibbonItemSize.Standard,
-        //            Orientation = System.Windows.Controls.Orientation.Horizontal,
-        //            CommandParameter = btr.Name
-        //        };
-
-        //        item.CommandHandler = new RelayCommandHandler(() =>
-        //        {
-        //            // здесь твоя логика «вставить выбранный блок»
-        //            var name = item.CommandParameter as string;
-        //            //InsertBlockByName(name);
-        //        });
-
-        //        blocksCombo.Items.Add(item);
-
-        //    }
-        //    tr.Commit();
-        //}
-
-        //panelSourceAxis.Items.Add(blocksCombo);
-
-
-
-
-
-
-
-
-        //// === ГРУППА "стойки" ===
-        //var rowPosts = new RibbonRowPanel();
-
-        //// 2.1 Комбобокс
-        //var postsCombo = new RibbonCombo
-        //{
-        //    Text = "Стойка",
-        //    ShowText = true,
-        //    Width = 160
-        //};
-        //rowPosts.Items.Add(postsCombo);
-
-        //// Разделитель между «колонками» внутри группы
-        //rowPosts.Items.Add(new RibbonSeparator());
-
-        //// 2.2 Три кнопки в столбик справа
-        //var stack = new RibbonItemCollection();
-
-        //var bt4 = new RibbonButton { Text = "bt4", ShowText = true, Size = RibbonItemSize.Standard };
-        //bt4.CommandHandler = new RelayCommandHandler(() => { /* ... */
-        //});
-
-        //var bt5 = new RibbonButton { Text = "bt5", ShowText = true, Size = RibbonItemSize.Standard };
-        //bt5.CommandHandler = new RelayCommandHandler(() => { /* ... */ });
-
-        //var bt6 = new RibbonButton { Text = "bt6", ShowText = true, Size = RibbonItemSize.Standard };
-        //bt6.CommandHandler = new RelayCommandHandler(() => { /* ... */ });
-
-        //rowPosts.Items.Add(bt4);
-        //rowPosts.Items.Add(bt5);
-        //rowPosts.Items.Add(bt6);
-
-
-        //// добавляем группу "стойки" в панель
-        //panelSourceAxis.Items.Add(rowPosts);
-
-
-
-
-
-        //// Кнопка "Новая ось"
-        //RibbonButton button = new RibbonButton
-        //{
-        //    Name = "NEWAXIS",
-        //    Text = "Новая ось",
-        //    ShowText = true,
-        //    //LargeImage = LoadImage("pack://application:,,,/ACAD_test;component/images/icon.png"),
-        //    Orientation = System.Windows.Controls.Orientation.Vertical,
-        //    Size = RibbonItemSize.Large,
-        //    CommandHandler = new RelayCommandHandler(() =>
-        //    {
-        //       TsoddHost.Current.NewAxis();
-        //    })
-        //};
-
-        //panelSourceAxis.Items.Add(button);
-
-
-
-
-        //// Кнопка
-        //RibbonButton button2 = new RibbonButton
-        //{
-        //    Name = "22",
-        //    Text = "starpoint",
-        //    ShowText = true,
-        //    //LargeImage = LoadImage("pack://application:,,,/ACAD_test;component/images/icon.png"),
-        //    Orientation = System.Windows.Controls.Orientation.Vertical,
-        //    Size = RibbonItemSize.Standard,
-        //    CommandHandler = new RelayCommandHandler(() =>
-        //    {
-
-        //List<string> ll = GetListOfBlocks("STAND");
-
-        //    })
-        //};
-        //panelSourceAxis.Items.Add(button2);
-
     }
 
 
