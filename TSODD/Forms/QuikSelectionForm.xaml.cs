@@ -1,24 +1,10 @@
 ﻿using ACAD_test;
-using Autodesk.AutoCAD.ApplicationServices;
 using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.DatabaseServices.Filters;
 using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Windows.Data;
-using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Forms;
-using System.Windows.Input;
-using System.Windows.Interop;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace TSODD.Forms
 {
@@ -30,12 +16,12 @@ namespace TSODD.Forms
         public ObjectSelectionForm()
         {
             InitializeComponent();
-            
+
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var locationX = doc.Window.DeviceIndependentLocation.X;
             var screenWidth = SystemParameters.PrimaryScreenWidth;
 
-            this.Left = locationX + screenWidth / 2 - 150; 
+            this.Left = locationX + screenWidth / 2 - 150;
             this.Top = SystemParameters.PrimaryScreenHeight / 2 - 50;
 
             cb_TypeOfObject.SelectedIndex = 0;
@@ -46,7 +32,7 @@ namespace TSODD.Forms
         {
             if (cb_TypeOfObject.SelectedIndex == -1) return;
             cb_SelectionType.Items.Clear();
-            
+
             switch (cb_TypeOfObject.SelectedIndex)
             {
                 case 0: // оси
@@ -58,7 +44,7 @@ namespace TSODD.Forms
                     cb_SelectionType.Items.Add("весь чертеж");
                     cb_SelectionType.Items.Add("привязанные к оси");
                     break;
-                
+
                 case 2: // знаки
                     cb_SelectionType.Items.Add("весь чертеж");
                     cb_SelectionType.Items.Add("привязанные к оси");
@@ -96,10 +82,10 @@ namespace TSODD.Forms
 
                     SelectObjects(selectedIds<Stand>(stands));
                     break;
-                     
+
                 case "11":  // стойки привязанные к оси
-                    
-                    var curAxis = TsoddCommands.SelectAxis();
+
+                    var curAxis = RibbonInitializer.Instance?.SelectAxis();
                     if (curAxis == null)
                     {
                         ed.WriteMessage("\n Ошибка выбора оси \n");
@@ -111,7 +97,7 @@ namespace TSODD.Forms
                     stands = stands.Where(s => s.AxisName == curAxis.Name).ToList();
                     SelectObjects(selectedIds<Stand>(stands));
                     break;
-                
+
                 case "20":  // знаки весь чертеж
 
                     SelectObjects(selectedIds<Sign>(signs));
@@ -119,7 +105,7 @@ namespace TSODD.Forms
 
                 case "21": // знаки, привязанные к оси
 
-                    curAxis = TsoddCommands.SelectAxis();
+                    curAxis = RibbonInitializer.Instance?.SelectAxis();
                     if (curAxis == null)
                     {
                         ed.WriteMessage("\n Ошибка выбора оси \n");
@@ -128,7 +114,7 @@ namespace TSODD.Forms
                     }
 
                     // фильтруем знаки по оси 
-                    List<Sign> separatedSigns = new List<Sign>();   
+                    List<Sign> separatedSigns = new List<Sign>();
                     foreach (var sign in signs)
                     {
                         Stand st = stands.FirstOrDefault(s => s.Handle == sign.StandHandle);
@@ -144,9 +130,9 @@ namespace TSODD.Forms
                     PromptSelectionOptions pso = new PromptSelectionOptions();
                     pso.MessageForAdding = "\n Выберите блок стойки ";
                     pso.SingleOnly = true;
-                   
-                    var filter = new SelectionFilter(new TypedValue[] {new TypedValue((int)DxfCode.Start,"INSERT")});
-                        
+
+                    var filter = new SelectionFilter(new TypedValue[] { new TypedValue((int)DxfCode.Start, "INSERT") });
+
                     var psr = ed.GetSelection(pso, filter);
                     if (psr.Status != PromptStatus.OK)
                     {
@@ -165,13 +151,13 @@ namespace TSODD.Forms
 
                 case "30":  // все типы линий
 
-                    var objectIds = LineTypeReader.CollectMarkLineTypeID(onlyMaster:false);
+                    var objectIds = LineTypeReader.CollectMarkLineTypeID(onlyMaster: false);
                     SelectObjects(objectIds);
                     break;
 
                 case "31":  // типы линии, привязянные к оси
 
-                    curAxis = TsoddCommands.SelectAxis();
+                    curAxis = RibbonInitializer.Instance?.SelectAxis();
                     if (curAxis == null)
                     {
                         ed.WriteMessage("\n Ошибка выбора оси \n");
@@ -208,8 +194,8 @@ namespace TSODD.Forms
                     break;
 
                 case "41":  // все блоки разметки
-                   
-                    curAxis = TsoddCommands.SelectAxis();
+
+                    curAxis = RibbonInitializer.Instance?.SelectAxis();
                     if (curAxis == null)
                     {
                         ed.WriteMessage("\n Ошибка выбора оси \n");
@@ -224,7 +210,7 @@ namespace TSODD.Forms
             }
 
             // внутренний метод конвертации списка в массив ObjectIds
-            ObjectId[] selectedIds<T> (List<T> listIds) where T : IRefBlock
+            ObjectId[] selectedIds<T>(List<T> listIds) where T : IRefBlock
             {
                 ObjectId[] objectIds = new ObjectId[listIds.Count];
                 for (int i = 0; i < listIds.Count; i++) objectIds[i] = listIds[i].ID;
@@ -233,7 +219,7 @@ namespace TSODD.Forms
 
             this.Close();
         }
-         
+
 
 
         private void SelectAllAxis()
@@ -254,7 +240,7 @@ namespace TSODD.Forms
             {
                 // поиск с учетом фильтра
                 var selection = ed.SelectAll(filter); ;
-       
+
                 if (selection.Status != PromptStatus.OK)    // неудачный поиск
                 {
                     ed.WriteMessage("\n В чертеже не найдено осей \n");
@@ -339,7 +325,7 @@ namespace TSODD.Forms
 
 
 
-        private void SelectObjects(ObjectId[] ids) 
+        private void SelectObjects(ObjectId[] ids)
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;

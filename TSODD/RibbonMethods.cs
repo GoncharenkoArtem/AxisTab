@@ -1,31 +1,17 @@
-﻿using Autodesk.AutoCAD.Runtime;
+﻿using Autodesk.AutoCAD.ApplicationServices;
+using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.EditorInput;
+using Autodesk.AutoCAD.Geometry;
+using Autodesk.AutoCAD.Runtime;
 using Autodesk.Windows;
-using System.Windows.Input;
+using System;
+using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
-using System.IO;
 using System.Windows;
 using System.Windows.Media.Imaging;
 using TSODD;
-using Autodesk.AutoCAD.ApplicationServices;
-using System.Collections.Generic;
-using Autodesk.AutoCAD.DatabaseServices;
-using System.Reflection;
-using System;
-using System.Windows.Documents;
-using System.Xml.Linq;
-using Autodesk.AutoCAD.EditorInput;
-using System.Security.Cryptography;
-using System.Windows.Controls;
-using System.Drawing;
-using System.Windows.Media.Media3D;
-using System.Security.Policy;
-using Autodesk.AutoCAD.Geometry;
 using TSODD.Forms;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using System.Net.NetworkInformation;
-using System.Collections;
-using System.Runtime.InteropServices;
-using Autodesk.AutoCAD.GraphicsInterface;
 
 
 
@@ -36,7 +22,7 @@ namespace ACAD_test
 {
     public partial class RibbonInitializer : IExtensionApplication
     {
-      
+
         // обработчик события активации документа
         private void Dm_DocumentActivated(object sender, DocumentCollectionEventArgs e)
         {
@@ -54,14 +40,14 @@ namespace ACAD_test
                 e.Document.Editor.PromptForSelectionEnding += Editor_PromptForSelectionEnding;
             }
 
-           
+
             ListOFAxisRebuild(); // перестраиваем combobox с осями
             LineTypeReader.RefreshLineTypesInAcad(); // загружаем типы линии
             TsoddBlock.blockInsertFlag = true; // разрешаем вставку блоков
-            
+
         }
 
-  
+
 
         private void Editor_PromptForSelectionEnding(object sender, PromptForSelectionEndingEventArgs e)
         {
@@ -70,7 +56,7 @@ namespace ACAD_test
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
-    
+
             // Id всех выбранных объектов и которые являются вставками блока
             var selectedIds = e.Selection.Cast<SelectedObject>()
                     .Select(o => o.ObjectId)
@@ -78,100 +64,100 @@ namespace ACAD_test
                                  id.ObjectClass.Name == RXClass.GetClass(typeof(Autodesk.AutoCAD.DatabaseServices.Polyline)).Name)
                     .ToList();
 
-    
-                if (selectedIds.Count == 0)
+
+            if (selectedIds.Count == 0)
+            {
+                if (selectioForm != null) { selectioForm.Close(); selectioForm = null; }
+                return; // если нет подходящих объектов, то выходим 
+            }
+
+            // получаем словарь с нужными блоками и типами линий (SIGN,MARK)
+            Dictionary<ObjectId, string> dictionary = GetDictionaryOfCorrectBlocks(selectedIds);
+
+            if (dictionary.Count == 0)
+            {
+                if (selectioForm != null) { selectioForm.Close(); selectioForm = null; }
+                return; // если нет подходящих объектов, то выходим 
+            }
+
+            // Вычисляем тип формы для выбора блоков 
+            bool signs = dictionary.Values.Any(m => m == "SIGN");
+            bool marks = dictionary.Values.Any(m => m == "MARK");
+
+            int formType = 0;
+            switch (signs, marks)
+            {
+                case var type when type.signs == true && type.marks == false:
+                    formType = 0;
+                    break;
+
+                case var type when type.signs == false && type.marks == true:
+                    formType = 1;
+                    break;
+
+                case var type when type.signs == true && type.marks == true:
+                    formType = 2;
+                    break;
+            }
+
+
+            // проверяем надо ли вызвать форму или перестроить ее 
+            if (selectioForm == null)
+            {
+                selectioForm = new SelectionFormBlocks(formType, dictionary);
+                selectioForm.Show();
+                selectioForm.Focus();
+            }
+            else
+            {
+                // проверяем надо ли перерисовать форму
+                bool dictionariesAreEqual = selectioForm._dictionary.Count == dictionary.Count && selectioForm._dictionary.OrderBy(k => k.Key).SequenceEqual(dictionary.OrderBy(k => k.Key));
+                if (selectioForm._type != formType || !dictionariesAreEqual) selectioForm.RebuildForm(formType, dictionary);
+                selectioForm.Focus();
+            }
+
+
+            // внутренний метод для заполния словаря
+            Dictionary<ObjectId, string> GetDictionaryOfCorrectBlocks(List<ObjectId> ids)
+            {
+                Dictionary<ObjectId, string> blockDictionary = new Dictionary<ObjectId, string>();
+
+                using (var tr = db.TransactionManager.StartTransaction())
                 {
-                    if (selectioForm != null) { selectioForm.Close(); selectioForm = null; }
-                    return; // если нет подходящих объектов, то выходим 
-                }
-
-                // получаем словарь с нужными блоками и типами линий (SIGN,MARK)
-                Dictionary<ObjectId, string> dictionary = GetDictionaryOfCorrectBlocks(selectedIds);
-
-                if (dictionary.Count == 0)
-                {
-                    if (selectioForm != null) { selectioForm.Close(); selectioForm = null; }
-                    return; // если нет подходящих объектов, то выходим 
-                }
-
-                // Вычисляем тип формы для выбора блоков 
-                bool signs = dictionary.Values.Any(m => m == "SIGN");
-                bool marks = dictionary.Values.Any(m => m == "MARK");
-
-                int formType = 0;
-                switch (signs, marks)
-                {
-                    case var type when type.signs == true && type.marks == false:
-                        formType = 0;
-                        break;
-
-                    case var type when type.signs == false && type.marks == true:
-                        formType = 1;
-                        break;
-
-                    case var type when type.signs == true && type.marks == true:
-                        formType = 2;
-                        break;
-                }
-
-
-                // проверяем надо ли вызвать форму или перестроить ее 
-                if (selectioForm == null)
-                {
-                    selectioForm = new SelectionFormBlocks(formType, dictionary);
-                    selectioForm.Show();
-                    selectioForm.Focus();
-                }
-                else 
-                {
-                    // проверяем надо ли перерисовать форму
-                    bool dictionariesAreEqual = selectioForm._dictionary.Count == dictionary.Count && selectioForm._dictionary.OrderBy(k => k.Key).SequenceEqual(dictionary.OrderBy(k => k.Key));
-                    if (selectioForm._type != formType || !dictionariesAreEqual) selectioForm.RebuildForm(formType, dictionary);
-                    selectioForm.Focus();
-                }
-
-
-                // внутренний метод для заполния словаря
-                Dictionary<ObjectId, string> GetDictionaryOfCorrectBlocks(List<ObjectId> ids)
-                {
-                    Dictionary<ObjectId, string> blockDictionary = new Dictionary<ObjectId, string>();
-
-                    using (var tr = db.TransactionManager.StartTransaction())
+                    // проходимся по всем объектам и ищем знаки и разметку
+                    foreach (ObjectId id in ids)
                     {
-                        // проходимся по всем объектам и ищем знаки и разметку
-                        foreach (ObjectId id in ids)
+                        DBObject dbo = (DBObject)tr.GetObject(id, OpenMode.ForRead);
+                        if (dbo is BlockReference br)   // если это блок
                         {
-                            DBObject dbo = (DBObject)tr.GetObject(id, OpenMode.ForRead);
-                            if (dbo is BlockReference br)   // если это блок
+                            foreach (ObjectId attr in br.AttributeCollection)
                             {
-                                foreach (ObjectId attr in br.AttributeCollection)
-                                {
-                                    var at = tr.GetObject(attr, OpenMode.ForRead) as AttributeReference;
-                                    if (at.Tag.Equals("SIGN", StringComparison.OrdinalIgnoreCase)) { blockDictionary[id] = "SIGN"; break; }
-                                    if (at.Tag.Equals("MARK", StringComparison.OrdinalIgnoreCase)) { blockDictionary[id] = "MARK"; break; }
-                                }
+                                var at = tr.GetObject(attr, OpenMode.ForRead) as AttributeReference;
+                                if (at.Tag.Equals("SIGN", StringComparison.OrdinalIgnoreCase)) { blockDictionary[id] = "SIGN"; break; }
+                                if (at.Tag.Equals("MARK", StringComparison.OrdinalIgnoreCase)) { blockDictionary[id] = "MARK"; break; }
                             }
+                        }
 
-                            if (dbo is Autodesk.AutoCAD.DatabaseServices.Polyline poly)   //  если это полилиния
+                        if (dbo is Autodesk.AutoCAD.DatabaseServices.Polyline poly)   //  если это полилиния
+                        {
+                            // проверяем есть ли xData у полилинии
+                            if (poly.XData != null)
                             {
-                                // проверяем есть ли xData у полилинии
-                                if (poly.XData != null)
-                                {
-                                    TsoddXdataElement tsoddXdataElement = new TsoddXdataElement();
-                                    tsoddXdataElement.Parse(poly.Id);
+                                TsoddXdataElement tsoddXdataElement = new TsoddXdataElement();
+                                tsoddXdataElement.Parse(poly.Id);
 
-                                    if (tsoddXdataElement.Type == TsoddElement.Axis) continue;  // если это ось, то пропускаем объект
-                                    blockDictionary[tsoddXdataElement.MasterPolylineID] = "MARK";
-                                }
+                                if (tsoddXdataElement.Type == TsoddElement.Axis) continue;  // если это ось, то пропускаем объект
+                                blockDictionary[tsoddXdataElement.MasterPolylineID] = "MARK";
                             }
                         }
                     }
-                    return blockDictionary;
                 }
+                return blockDictionary;
+            }
 
         }
 
-   
+
 
         // обработчик события закрытия документа
         private void Dm_DocumentToBeDestroyed(object sender, DocumentCollectionEventArgs e)
@@ -188,7 +174,7 @@ namespace ACAD_test
                 e.Document.CommandEnded -= MdiActiveDocument_CommandEnded;
                 e.Document.CommandCancelled -= MdiActiveDocument_CommandEnded;
                 e.Document.Editor.PromptForSelectionEnding -= Editor_PromptForSelectionEnding;
- 
+
                 db.ObjectErased -= Db_ObjectErased;
             }
 
@@ -197,23 +183,22 @@ namespace ACAD_test
         }
 
 
-
         // обработчик удаления элемента из базы autoCAD
         private void Db_ObjectErased(object sender, Autodesk.AutoCAD.DatabaseServices.ObjectErasedEventArgs e)
         {
             if (!readyToDeleteEntity) return; // если не запрещен анализ Xdata другим процессами
             if (!e.Erased) return;
             if (e.DBObject.GetType().Name != "Polyline") return;
- 
+
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
 
-     
+
             // проверяем есть ли xData у удаляемого объекта
             if (e.DBObject.XData != null)
             {
                 TsoddXdataElement tsoddXdataElement = new TsoddXdataElement();
-                try{ tsoddXdataElement.Parse(e.DBObject.Id);}
+                try { tsoddXdataElement.Parse(e.DBObject.Id); }
                 catch (Autodesk.AutoCAD.Runtime.Exception ex) { return; }
 
                 if (tsoddXdataElement.Type == TsoddElement.Axis)    // если это ось
@@ -286,13 +271,40 @@ namespace ACAD_test
                         dbo.Erase(true);
                     }
                 }
- 
+
                 tr.Commit();
             }
             _dontDeleteMe.Clear();
             _deleteMe.Clear();
         }
 
+
+        // метод выбора и проверки полилинии оси
+        public Axis SelectAxis()
+        {
+            Axis resultAxis = null;
+            var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
+            var ed = doc.Editor;
+
+            // Настройки промпта
+            var peo = new PromptEntityOptions("\n Выберите ось: ");
+            peo.SetRejectMessage("\n Это не полилиния. Выберите полилинию!");
+            peo.AddAllowedClass(typeof(Autodesk.AutoCAD.DatabaseServices.Polyline), exactMatch: false);
+
+            // Запрос
+            var per = ed.GetEntity(peo);
+            if (per.Status == PromptStatus.OK)
+            {
+                resultAxis = TsoddHost.Current.axis.FirstOrDefault(a => a.PolyID == per.ObjectId);
+                if (resultAxis == null)
+                {
+                    EditorMessage("\n Данная полилиния не является осью ");
+                    return null;
+                }
+            }
+
+            return resultAxis;
+        }
 
 
         // метод перестраивания combobox осей
@@ -312,7 +324,7 @@ namespace ACAD_test
             if (toSelect != null)
                 axisCombo.Current = toSelect;
 
-            if(preselect != null) TsoddHost.Current.currentAxis = preselect;
+            if (preselect != null) TsoddHost.Current.currentAxis = preselect;
         }
 
 
@@ -369,9 +381,6 @@ namespace ACAD_test
         }
 
 
-
-
-
         // обработчик события выбора текущей оси
         private void AxisCombo_CurrentChanged(object sender, RibbonPropertyChangedEventArgs e)
         {
@@ -393,7 +402,7 @@ namespace ACAD_test
 
 
 
-       
+
         //// обработчик события выбора текущей группы знаков
         //private void SignsGroups_CurrentChanged(object sender, RibbonPropertyChangedEventArgs e)
         //{
@@ -496,8 +505,6 @@ namespace ACAD_test
         }
 
 
-
-
         private void ApplyLineType(string name)
         {
 
@@ -524,11 +531,11 @@ namespace ACAD_test
             // текущий тип линии
             var currentIAcadDef = lineTypeList.FirstOrDefault(lt => lt.Name == name);
 
-            if (currentIAcadDef == null) { _marksLineTypeFlag = true; splitMarksLineTypes.IsEnabled = false; rowLineType.IsEnabled= true;  return; }
+            if (currentIAcadDef == null) { _marksLineTypeFlag = true; splitMarksLineTypes.IsEnabled = false; rowLineType.IsEnabled = true; return; }
 
             // экземпляры первой и второй линии
             AcadLineType firstLineType = null;
-            AcadLineType secondLineType= null;
+            AcadLineType secondLineType = null;
 
             // создаем экземпляры текущего типа линии currentLineType_1 и ивторого типа линии currentLineType_2 (для мультилинии)
             CurrentLineType currentLineType_1 = new CurrentLineType();
@@ -559,7 +566,7 @@ namespace ACAD_test
             // толщина 
             var widthLabel_1 = comboLineTypeWidth_1.Current as RibbonLabel;
             Double.TryParse(widthLabel_1.Description, out double val1_1);
-            if (val1_1 >0) currentLineType_1.Width = val1_1;
+            if (val1_1 > 0) currentLineType_1.Width = val1_1;
             // цвет
             var colorLabel_1 = comboLineTypeColor_1.Current as RibbonLabel;
             short.TryParse(colorLabel_1.Description, out short val1_2);
@@ -567,7 +574,7 @@ namespace ACAD_test
 
             // заполняем вторую линию для мультилинии
             if (secondLineType != null)
-            {             
+            {
                 // паттерн
                 var patternLabel_2 = comboLineTypePattern_2.Current as RibbonLabel;
                 var lineTypePattern_2 = patternLabel_2.Description;
@@ -632,12 +639,12 @@ namespace ACAD_test
                             List<(int, string)> xDataList = new List<(int, string)>();
                             xDataList.Add(((int)DxfCode.ExtendedDataAsciiString, "slave"));                                             // идентификатор линии, как ведомой 
                             xDataList.Add(((int)DxfCode.ExtendedDataHandle, masterPolyline.Handle.ToString()));                         // handle основной линии
-                      
+
                             AutocadXData.UpdateXData(slavePolyline.Id, xDataList);
                         }
 
                         // проверяем основную полилинию и применяем оформление для нее
-                        if (ApplyLineTypeToEntity(masterPolyline.Id, currentLineType_1))  
+                        if (ApplyLineTypeToEntity(masterPolyline.Id, currentLineType_1))
                         {
                             string mTextHandle = AddMtextToLineType(masterPolyline.Id, name);
 
@@ -668,7 +675,7 @@ namespace ACAD_test
             // var curButton = splitMarksLineTypes.Current as RibbonButton;
             // if (curButton == null) return;
 
-            if(TsoddHost.Current.currentMarksLineType == name) return;  // это не изменение типа линии, а просто применение
+            if (TsoddHost.Current.currentMarksLineType == name) return;  // это не изменение типа линии, а просто применение
 
             TsoddHost.Current.currentMarksLineType = name;  // запоминаем имя текущего типа линии
 
@@ -690,7 +697,7 @@ namespace ACAD_test
             switch (currentLineType)
             {
                 case var l when l is AcadLineType lt:   // когда это простой тип линии
-                    
+
                     // блокируем контролы для второй линии
                     comboLineTypePattern_2.IsVisible = false;
                     comboLineTypeWidth_2.IsVisible = false;
@@ -791,7 +798,7 @@ namespace ACAD_test
 
 
             // внутренний метод заполнения combobox color
-            void FillColor(List<short>list, RibbonCombo combo)
+            void FillColor(List<short> list, RibbonCombo combo)
             {
                 foreach (var color in list)
                 {
@@ -807,7 +814,7 @@ namespace ACAD_test
 
                             // прямоугольник
                             var rect = new Rectangle(0, 0, 12, 12);
-                    
+
                             g.DrawRectangle(pen, rect);
                             using (var brush = new SolidBrush(cl.ColorValue))
                             {
@@ -818,9 +825,9 @@ namespace ACAD_test
                             var bmpSource = TsoddBlock.ToImageSource(bmp);
 
                             RibbonLabel rbl = new RibbonLabel { Image = bmpSource, LargeImage = bmpSource, Description = $"{color}" };
-                            combo.Items.Add(rbl);   
+                            combo.Items.Add(rbl);
                         }
-                    } 
+                    }
                 }
                 if (combo.Items.Count > 0) combo.Current = combo.Items[0];  // выбираем первый
             }
@@ -906,16 +913,16 @@ namespace ACAD_test
                     offset = db.Insunits == UnitsValue.Millimeters ? offset * 1000 : offset;
 
                     // пробуем получить подобные полилинии
-                    try { polyline_1 = (Autodesk.AutoCAD.DatabaseServices.Polyline)polyline.GetOffsetCurves(offset/2)[0]; }
-                    catch (Autodesk.AutoCAD.Runtime.Exception ex){ ed.WriteMessage($"Не получилось создать подобную линию для полилинии с Id = {id}"); }
+                    try { polyline_1 = (Autodesk.AutoCAD.DatabaseServices.Polyline)polyline.GetOffsetCurves(offset / 2)[0]; }
+                    catch (Autodesk.AutoCAD.Runtime.Exception ex) { ed.WriteMessage($"Не получилось создать подобную линию для полилинии с Id = {id}"); }
 
-                    try { polyline_2 = (Autodesk.AutoCAD.DatabaseServices.Polyline)polyline.GetOffsetCurves(-offset/2)[0]; }
+                    try { polyline_2 = (Autodesk.AutoCAD.DatabaseServices.Polyline)polyline.GetOffsetCurves(-offset / 2)[0]; }
                     catch (Autodesk.AutoCAD.Runtime.Exception ex) { ed.WriteMessage($"Не получилось создать подобную линию для полилинии с Id = {id}"); }
 
                     // добавляем линии в чертеж
-                    if (polyline_1 != null && polyline_2 != null) 
+                    if (polyline_1 != null && polyline_2 != null)
                     {
-                      
+
                         BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                         BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
 
@@ -963,7 +970,7 @@ namespace ACAD_test
 
                     // проверка на то, что объект еще есть в бд
                     try { var dbo = (DBObject)tr.GetObject(id, OpenMode.ForRead); }
-                    catch { outId = ObjectId.Null ; return;  }  // если объекта нет, то выходим
+                    catch { outId = ObjectId.Null; return; }  // если объекта нет, то выходим
 
                     TsoddXdataElement tsoddXdataElement = new TsoddXdataElement();
                     tsoddXdataElement.Parse(id);
@@ -972,7 +979,7 @@ namespace ACAD_test
                     if (tsoddXdataElement.MasterPolylineID != ObjectId.Null)
                     {
                         // удаляем старый текст
-                        if (tsoddXdataElement.MtextID!= ObjectId.Null)
+                        if (tsoddXdataElement.MtextID != ObjectId.Null)
                         {
                             // удаляем старый mtext
                             var dbo = (DBObject)tr.GetObject(tsoddXdataElement.MtextID, OpenMode.ForWrite, openErased: true);
@@ -1044,7 +1051,7 @@ namespace ACAD_test
         /// <summary>
         ///  Метод  инвертирующий линии у мультилинии
         /// </summary>
-        public static void LineTypeInvert()
+        public void LineTypeInvert()
         {
             var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "LWPOLYLINE" });
 
@@ -1072,7 +1079,7 @@ namespace ACAD_test
                             continue;
                         }
 
-                        var masterPoly = (Autodesk.AutoCAD.DatabaseServices.Polyline) tr.GetObject(txde.MasterPolylineID, OpenMode.ForWrite);
+                        var masterPoly = (Autodesk.AutoCAD.DatabaseServices.Polyline)tr.GetObject(txde.MasterPolylineID, OpenMode.ForWrite);
                         var slavePoly = (Autodesk.AutoCAD.DatabaseServices.Polyline)tr.GetObject(txde.SlavePolylineID, OpenMode.ForWrite);
 
                         if (masterPoly != null && slavePoly != null)
@@ -1080,9 +1087,9 @@ namespace ACAD_test
 
                             // проверка на то, что объект уже был изменен
                             if (listOfReverseObjects.TryGetValue(txde.MasterPolylineID, out ObjectId val)) continue;
-                       
+
                             // сохраняем во временную переменную данные
-                            (string lineType, double width, int color) tempProp = (string.Empty,0,0);
+                            (string lineType, double width, int color) tempProp = (string.Empty, 0, 0);
                             tempProp.lineType = masterPoly.Linetype;
                             tempProp.width = masterPoly.ConstantWidth;
                             tempProp.color = masterPoly.ColorIndex;
@@ -1109,7 +1116,7 @@ namespace ACAD_test
         /// <summary>
         ///  Метод  инвертирующий положение текста у LineType
         /// </summary>
-        public static void LineTypeTextInvert()
+        public void LineTypeTextInvert()
         {
             var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "LWPOLYLINE" });
 
@@ -1153,13 +1160,13 @@ namespace ACAD_test
                             if (listOfReverseObjects.TryGetValue(txde.MasterPolylineID, out ObjectId val)) continue;
 
                             MText mtxt;
-                            try{mtxt = (MText)tr.GetObject(txde.MtextID, OpenMode.ForWrite);}
+                            try { mtxt = (MText)tr.GetObject(txde.MtextID, OpenMode.ForWrite); }
                             catch { ed.WriteMessage("\n Ошибка объекта mtext (данные полилинии разметки) \n"); return; }
 
                             offset = 0;
                             masterPoly = (Autodesk.AutoCAD.DatabaseServices.Polyline)tr.GetObject(txde.MasterPolylineID, OpenMode.ForRead);
                             basePoly = masterPoly;
-                            
+
                             if (txde.SlavePolylineID != ObjectId.Null)
                             {
                                 slavePoly = (Autodesk.AutoCAD.DatabaseServices.Polyline)tr.GetObject(txde.SlavePolylineID, OpenMode.ForRead);
@@ -1195,7 +1202,7 @@ namespace ACAD_test
                             Vector3d tan = resultPoly.GetFirstDerivative(parametr).GetNormal();
                             double angle = Math.Atan2(tan.Y, tan.X);
 
-                            if (dist_1 < dist_2)  angle += Math.PI;
+                            if (dist_1 < dist_2) angle += Math.PI;
 
                             mtxt.Location = centerPoint;
                             mtxt.Rotation = angle;
@@ -1231,7 +1238,7 @@ namespace ACAD_test
                 {
 
                     var polyline = (Autodesk.AutoCAD.DatabaseServices.Polyline)tr.GetObject(id, OpenMode.ForWrite);
- 
+
                     // проверка на то, что полилиния не является осью
                     var axis = TsoddHost.Current.axis.FirstOrDefault(a => a.PolyHandle == polyline.Handle);
                     if (axis != null)
@@ -1246,7 +1253,10 @@ namespace ACAD_test
                     var occ = ocm.GetContextCollection("ACDB_ANNOTATIONSCALES");
                     var curSC = occ.CurrentContext as AnnotationScale;
 
+                  
                     polyline.Linetype = lineType.Name;
+
+
                     polyline.LinetypeScale = koef / curSC.DrawingUnits;
                     polyline.ConstantWidth = lineType.Width * koef;
                     polyline.ColorIndex = lineType.ColorIndex;
@@ -1269,9 +1279,9 @@ namespace ACAD_test
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
-            // пользовательские настройки
+            // пользовательские настр-йки
             var userOptions = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath);
-
+   
             if (polylineID == null) return null;
 
             using (doc.LockDocument())
@@ -1280,17 +1290,17 @@ namespace ACAD_test
                 {
                     BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                     BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-   
+
                     // исходная полилиния
                     var polyline = (Autodesk.AutoCAD.DatabaseServices.Polyline)tr.GetObject(polylineID, OpenMode.ForRead);
-                   
+
                     // уточняем положение текста
                     Autodesk.AutoCAD.DatabaseServices.Polyline tempPoly = null;
                     double scale = db.Cannoscale.DrawingUnits;
                     double scaleFactor = db.Insunits == UnitsValue.Millimeters ? 0.001 : 1;
 
-                    try { tempPoly = (Autodesk.AutoCAD.DatabaseServices.Polyline)polyline.GetOffsetCurves((userOptions.LineTypeTextHeight+0.1) * scale)[0]; }
-                    catch (Autodesk.AutoCAD.Runtime.Exception ex) {}
+                    try { tempPoly = (Autodesk.AutoCAD.DatabaseServices.Polyline)polyline.GetOffsetCurves((userOptions.LineTypeTextHeight + 0.1) * scale)[0]; }
+                    catch (Autodesk.AutoCAD.Runtime.Exception ex) { }
 
                     if (tempPoly == null) tempPoly = polyline;  // лесли не получилось создать оффсет полилинии, то возьмем текущую
 
@@ -1298,9 +1308,9 @@ namespace ACAD_test
                     Point3d centerPoint = tempPoly.GetPointAtDist(tempPoly.Length / 2);
                     double parametr = tempPoly.GetParameterAtPoint(centerPoint);
                     Vector3d tan = tempPoly.GetFirstDerivative(parametr).GetNormal();
-                   
+
                     double angle = Math.Atan2(tan.Y, tan.X);
-                    
+
                     var handle = polylineID.Handle.ToString();
                     string mTextId = polylineID.OldId.ToString();
 
@@ -1308,7 +1318,7 @@ namespace ACAD_test
                     mt.Annotative = AnnotativeStates.True;
                     mt.Location = centerPoint;
                     mt.Rotation = angle;
-                    mt.Contents = $"{lineTypeName} ("+ $@"%<\AcObjProp Object(%<\_ObjId {mTextId}>%).Length \f ""%lu2%ct8[{scaleFactor}]"">%" + " м)";
+                    mt.Contents = $"{lineTypeName} (" + $@"%<\AcObjProp Object(%<\_ObjId {mTextId}>%).Length \f ""%lu2%ct8[{scaleFactor}]"">%" + " м)";
                     mt.TextHeight = userOptions.LineTypeTextHeight * scale;
                     mt.Height = userOptions.LineTypeTextHeight;
                     mt.Attachment = AttachmentPoint.MiddleCenter;
@@ -1339,43 +1349,44 @@ namespace ACAD_test
                     return mt.Handle.ToString();
                 }
             }
-
-
         }
 
 
         // метод создает список RibbonButton для каждого кастомного типа линий
         public void ListOfMarksLinesLoad(int bmpWidth, int bmpHeight, string preSelect = null)
         {
-
             splitMarksLineTypes.Items.Clear();
 
             // проходимся по всем типам линий в файле
             foreach (var lineType in LineTypeReader.Parse())
             {
-                if (lineType.IsMlineElement)  continue;  //  если это составная часть мультилинии, то пропускаем 
+                if (lineType.IsMlineElement) continue;  //  если это составная часть мультилинии, то пропускаем 
 
                 var bmp = new Bitmap(bmpWidth, bmpHeight); // новый Bitmap для отрисовки типа линии
 
                 using (var g = Graphics.FromImage(bmp))     // холст созданный, по Bitmap
                 {
-                    using (var pen = new Pen(Color.WhiteSmoke, 2f))  //  Кисть для рисовния 
+
+                    using (var pen = new Pen(Brushes.WhiteSmoke, 2f))  //  Кисть для рисовния 
                     {
                         // прозрачный фон bmp 
                         g.Clear(Color.Transparent);
 
                         // подпись слоя
-                        using (var font = new System.Drawing.Font("Mipgost", 10f, System.Drawing.FontStyle.Bold ))
+                        using (var font = new System.Drawing.Font("Mipgost", 10f, System.Drawing.FontStyle.Bold))
                         {
-                            g.DrawString(lineType.Name, font, Brushes.WhiteSmoke, new PointF(13-lineType.Name.Length*2, 2));
+                            g.DrawString(lineType.Name, font, Brushes.WhiteSmoke, new PointF(13 - lineType.Name.Length * 2, 2));
                         }
 
                         // получаем паттерн штриховой линии простого типа лини
                         if (lineType is AcadLineType lt && lt.PatternValues.Count > 0)
                         {
-                            float[] patternArray = GetPatternArray(lt.PatternValues[0],5);
+                            Autodesk.AutoCAD.Colors.Color cl = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByAci, lt.ColorIndex[0]);
+                            pen.Color = cl.ColorValue;
+
+                            float[] patternArray = GetPatternArray(lt.PatternValues[0], 5);
                             pen.DashPattern = patternArray;
-                            int y = bmpHeight / 2+1;
+                            int y = bmpHeight / 2 + 1;
                             g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                             g.DrawLine(pen, 50, y, bmpWidth - 6, y);
                         }
@@ -1386,9 +1397,12 @@ namespace ACAD_test
                             int y = bmpHeight;
                             foreach (var line in mlt.MLineLineTypes)
                             {
+                                Autodesk.AutoCAD.Colors.Color cl = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByAci, line.ColorIndex[0]);
+                                pen.Color = cl.ColorValue;
+
                                 float[] patternArray = GetPatternArray(line.PatternValues[0], 5);
                                 pen.DashPattern = patternArray;
-                                y -= bmpHeight / 3+1;
+                                y -= bmpHeight / 3 + 1;
                                 g.SmoothingMode = System.Drawing.Drawing2D.SmoothingMode.AntiAlias;
                                 g.DrawLine(pen, 50, y, bmpWidth - 6, y);
                             }
@@ -1402,7 +1416,7 @@ namespace ACAD_test
                             ShowText = false,
                             Description = lineType.Name,
                             ShowImage = true,
-              
+
                         };
 
                         rb.CommandHandler = new RelayCommandHandler(() =>
@@ -1485,16 +1499,16 @@ namespace ACAD_test
 
             }
 
-           patternArray = patternList.ToArray();
-           //pen.DashPattern = patternArray;
-           return patternArray;
+            patternArray = patternList.ToArray();
+            //pen.DashPattern = patternArray;
+            return patternArray;
         }
 
 
 
 
         // заполняет RibbonSplitButton элементами RibbonButton с именами и картинками
-        public void FillBlocksMenu(RibbonSplitButton split, string tag,  string preselect = null)
+        public void FillBlocksMenu(RibbonSplitButton split, string tag, string preselect = null)
         {
             split.Items.Clear();
 
@@ -1502,7 +1516,7 @@ namespace ACAD_test
             string group = null;
             if (tag == "SIGN" && TsoddHost.Current.currentSignGroup != null) group = TsoddHost.Current.currentSignGroup;
 
-            var listOfBlocks =TsoddBlock.GetListOfBlocks(tag,group);    // формируем список блоков по тегу
+            var listOfBlocks = TsoddBlock.GetListOfBlocks(tag, group);    // формируем список блоков по тегу
 
             foreach (var block in listOfBlocks)                         // для всех блков сосздаем кнопку RibbonButton с имененм и картинкой
             {
@@ -1524,13 +1538,13 @@ namespace ACAD_test
                     switch (tag)
                     {
                         case "STAND":
-                            TsoddBlock.InsertStandOrMarkBlock(name);
+                            TsoddBlock.InsertStandOrMarkBlock(name, true);
                             break;
                         case "SIGN":
                             TsoddBlock.InsertSignBlock(name);
                             break;
                     }
- 
+
                 });
                 split.Items.Add(item);
             }
@@ -1624,7 +1638,7 @@ namespace ACAD_test
         /// <summary>
         /// Метод создает мультивыноску для объектов TSODD
         /// </summary>
-        private void CreateMLeaderForTsoddObject()
+        public void CreateMLeaderForTsoddObject()
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
@@ -1655,7 +1669,7 @@ namespace ACAD_test
             {
                 // узнаем тип выбранного объекта
                 ObjectId id = psr.Value.GetObjectIds().First();
-                
+
                 DBObject dbo = (DBObject)tr.GetObject(id, OpenMode.ForRead);
 
                 switch (dbo)
@@ -1675,7 +1689,7 @@ namespace ACAD_test
                         break;
 
                     case Autodesk.AutoCAD.DatabaseServices.Polyline poly:
-                        
+
                         // пробуем прочитать xData
                         TsoddXdataElement txde = new TsoddXdataElement();
                         txde.Parse(poly.Id);
@@ -1728,7 +1742,7 @@ namespace ACAD_test
                 MText mtext = new MText
                 {
                     Contents = txt,
-                    TextHeight = userOptions.MleaderTextHeight*scale,
+                    TextHeight = userOptions.MleaderTextHeight * scale,
                     Location = textPoint,
                     Attachment = AttachmentPoint.MiddleCenter,
                     Annotative = AnnotativeStates.True
@@ -1772,14 +1786,14 @@ namespace ACAD_test
         /// <summary>
         ///  Получает ПК оси указанной точки
         /// </summary>
-        private static void GetPkOnAxis()
+        public void GetPkOnAxis()
         {
-            var doc =Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
 
             // выбор оси
-            Axis axis = TsoddCommands.SelectAxis();
+            Axis axis = RibbonInitializer.Instance?.SelectAxis();
             if (axis == null) return; // выходим, ошибка выбора оси
             var polylineAxis = axis.AxisPoly;
             if (polylineAxis == null) return; // выходим, ошибка выбора оси
@@ -1825,7 +1839,7 @@ namespace ACAD_test
                 if (dc != null)
                 {
                     Point3dCollection pointsCollection = new Point3dCollection { cursorPos, pointOnAxis };
-                    Autodesk.AutoCAD.GraphicsInterface.Polyline tempPoly = new Autodesk.AutoCAD.GraphicsInterface.Polyline( pointsCollection,Vector3d.ZAxis,IntPtr.Zero);
+                    Autodesk.AutoCAD.GraphicsInterface.Polyline tempPoly = new Autodesk.AutoCAD.GraphicsInterface.Polyline(pointsCollection, Vector3d.ZAxis, IntPtr.Zero);
                     dc.Geometry.Polyline(tempPoly);
                     tempPoly.Dispose();
 
@@ -1848,15 +1862,15 @@ namespace ACAD_test
         /// <summary>
         /// Отстраиывает ПК на оси, по указанному double
         /// </summary>
-        private static void SetPkOnAxis() 
+        public void SetPkOnAxis()
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
 
             // выбор оси
-            Axis axis = TsoddCommands.SelectAxis();
-            if(axis == null) return; // выходим, ошибка выбора оси
+            Axis axis = RibbonInitializer.Instance?.SelectAxis();
+            if (axis == null) return; // выходим, ошибка выбора оси
             var polylineAxis = axis.AxisPoly;
             if (polylineAxis == null) return; // выходим, ошибка выбора оси
             double koef = db.Insunits == UnitsValue.Meters ? 1 : 0.001;   // коэффициент перевода в метры
@@ -1888,17 +1902,17 @@ namespace ACAD_test
 
 
             var userOptions = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath);
-            var distanceOffsetFromAxis = userOptions.PKLineLength/koef;
+            var distanceOffsetFromAxis = userOptions.PKLineLength / koef;
             Point3d p_1 = pointOnAxis + vector * distanceOffsetFromAxis;
             Point3d p_2 = pointOnAxis - vector * distanceOffsetFromAxis;
 
 
             int pt_1 = (int)Math.Truncate(distVal);
-            double pt_2 = Math.Round((distVal - pt_1)*100, 2);
+            double pt_2 = Math.Round((distVal - pt_1) * 100, 2);
             string PK = $"ПК {pt_1} + {pt_2}";
 
 
-            Line line = new Line(p_1,p_2);
+            Line line = new Line(p_1, p_2);
             line.Layer = "0";
 
             using (doc.LockDocument())
@@ -1914,8 +1928,8 @@ namespace ACAD_test
                 MText mtext = new MText();
                 mtext.Contents = PK;
                 mtext.Rotation = angle;
-                mtext.TextHeight= userOptions.PKTextHeight/ curSC.Scale;
-                mtext.Location = pointOnAxis + ((vector  - vector.GetPerpendicularVector()) / curSC.Scale);
+                mtext.TextHeight = userOptions.PKTextHeight / curSC.Scale;
+                mtext.Location = pointOnAxis + ((vector - vector.GetPerpendicularVector()) / curSC.Scale);
 
                 // Получаем таблицу текстовых стилей
                 TextStyleTable textStyleTable = (TextStyleTable)tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
@@ -1929,7 +1943,7 @@ namespace ACAD_test
 
                 BlockTable bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
                 BlockTableRecord btr = (BlockTableRecord)tr.GetObject(bt[BlockTableRecord.ModelSpace], OpenMode.ForWrite);
-                
+
                 btr.AppendEntity(mtext);
                 tr.AddNewlyCreatedDBObject(mtext, true);
                 btr.AppendEntity(line);

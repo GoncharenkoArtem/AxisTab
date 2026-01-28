@@ -1,16 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using ACAD_test;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.Geometry;
-using System.Windows;
-using Autodesk.AutoCAD.Runtime;
-using TSODD;
-using ACAD_test;
 
 namespace TSODD
 {
@@ -23,7 +13,7 @@ namespace TSODD
         public Polyline AxisPoly;
         public string Name;
         //public Point3d StartPoint;
-                        
+
         public bool ReverseDirection = false;
         public double StartPK = 0.0;
 
@@ -31,8 +21,8 @@ namespace TSODD
 
 
 
- 
-        public bool GetAxisStartPoint() 
+
+        public bool GetAxisStartPoint()
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
             var ed = doc.Editor;
@@ -40,12 +30,12 @@ namespace TSODD
             // Настройки промпта выбора начальной точки
             var peo = new PromptPointOptions("\n Выберете начальную точку оси: ");
             var per = ed.GetPoint(peo);
-            if (per.Status != PromptStatus.OK || (AxisPoly == null)) 
+            if (per.Status != PromptStatus.OK || (AxisPoly == null))
             {
                 ed.WriteMessage("\n Ошибка выбора начальной точки оси...");
                 return false;
             }
-        
+
             // поиск ближайшей вершины 
             double dist_1, dist_2;
             dist_1 = per.Value.DistanceTo(AxisPoly.StartPoint);
@@ -79,7 +69,7 @@ namespace TSODD
         }
 
 
-        public bool GetAxisName() 
+        public bool GetAxisName()
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
             var ed = doc.Editor;
@@ -116,10 +106,10 @@ namespace TSODD
             // Запрос
             var per = ed.GetEntity(peo);
             if (per.Status != PromptStatus.OK)
-                {
-                    ed.WriteMessage("\n Ошибка выбора полилинии...");
-                    return false;
-                }
+            {
+                ed.WriteMessage("\n Ошибка выбора полилинии...");
+                return false;
+            }
 
             // Работа с выбранной полилинией
             using (var tr = doc.TransactionManager.StartTransaction())

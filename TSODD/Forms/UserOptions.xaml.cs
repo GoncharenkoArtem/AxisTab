@@ -1,18 +1,7 @@
 ﻿using Autodesk.AutoCAD.DatabaseServices;
 using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace TSODD
 {
@@ -55,23 +44,23 @@ namespace TSODD
             var db = doc.Database;
             var ed = doc.Editor;
 
-            using(doc.LockDocument())
+            using (doc.LockDocument())
             {
                 using (var tr = db.TransactionManager.StartTransaction())
                 {
 
                     // Получаем таблицу текстовых стилей
-                    TextStyleTable textStyleTable = (TextStyleTable)tr.GetObject(db.TextStyleTableId,OpenMode.ForRead);
+                    TextStyleTable textStyleTable = (TextStyleTable)tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);
 
                     // Перебираем все стили
                     foreach (ObjectId styleId in textStyleTable)
                     {
-                        TextStyleTableRecord styleRecord = (TextStyleTableRecord)tr.GetObject(styleId,OpenMode.ForRead);
-                        if(!string.IsNullOrEmpty(styleRecord.Name)) textStyleNames.Add(styleRecord.Name);
+                        TextStyleTableRecord styleRecord = (TextStyleTableRecord)tr.GetObject(styleId, OpenMode.ForRead);
+                        if (!string.IsNullOrEmpty(styleRecord.Name)) textStyleNames.Add(styleRecord.Name);
                     }
 
                     // стили мультивыносок
-                    DBDictionary dict = tr.GetObject( db.MLeaderStyleDictionaryId,OpenMode.ForRead) as DBDictionary;
+                    DBDictionary dict = tr.GetObject(db.MLeaderStyleDictionaryId, OpenMode.ForRead) as DBDictionary;
 
                     if (dict != null)
                     {

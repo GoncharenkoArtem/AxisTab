@@ -1,24 +1,13 @@
-﻿using System;
+﻿using ACAD_test;
+using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
+using System.Windows.Forms;
 using System.Windows.Interop;
-using ACAD_test;
-using System.Xml.Linq;
 using System.Windows.Media.Animation;
-using System.IO;
+using System.Windows.Media.Imaging;
 
 namespace TSODD
 {
@@ -91,14 +80,14 @@ namespace TSODD
 
                     height = 410;
                     width = 400;
-                    
+
                     this.Top = screenHeight;
                     this.Height = 0;
                     this.Width = width;
 
                     GetImage(cock_image, "cock_1", 20, 180);
                     GetImage(cloud_image, "cloud_left", 10, 10);
-                    GetText(25,28);
+                    GetText(25, 28);
                     RandomizeFormPosition(true);
 
                     maxValue = height;
@@ -163,12 +152,12 @@ namespace TSODD
                     GetImage(cloud_image, "cloud_left_2", 195, 0);
                     GetText(240, 15);
                     RandomizeFormPosition(false);
-                    
+
                     maxValue = width;
                     minValue = 0;
 
                     RightAnimationWindow(windowStoryboardStart, maxValue, minValue, false);
-                    
+
                     break;
 
             }
@@ -186,7 +175,7 @@ namespace TSODD
                 this.Left = Xposition;
             }
             else
-            { 
+            {
                 int Yposition = randomVal.Next((int)(screenHeight / 4 - this.Height / 2), (int)(screenHeight * 3 / 4 - this.Height / 2));
                 this.Top = Yposition;
             }
@@ -198,7 +187,7 @@ namespace TSODD
             // Анимация высоты
             DoubleAnimation heightAnimation = new DoubleAnimation
             {
-                From = invert? max : min ,
+                From = invert ? max : min,
                 To = invert ? min : max,
                 Duration = TimeSpan.FromSeconds(0.3)
             };
@@ -209,8 +198,8 @@ namespace TSODD
             // Анимация позиции
             DoubleAnimation topAnimation = new DoubleAnimation
             {
-                From = invert ? screenHeight - max: screenHeight - min,
-                To = invert ? screenHeight -  min : screenHeight - max,
+                From = invert ? screenHeight - max : screenHeight - min,
+                To = invert ? screenHeight - min : screenHeight - max,
                 Duration = TimeSpan.FromSeconds(0.3)
             };
 
@@ -243,7 +232,7 @@ namespace TSODD
             DoubleAnimation leftAnimation = new DoubleAnimation
             {
                 From = invert ? 0 : -cock_image.Width,
-                To = invert ?  -cock_image.Width : 0,
+                To = invert ? -cock_image.Width : 0,
                 Duration = TimeSpan.FromSeconds(0.3)
             };
 
@@ -304,7 +293,7 @@ namespace TSODD
             // теперь запускаем анимацию текста 
             DoubleAnimation doubleAnimationOpacity = new DoubleAnimation()
             {
-                From = 0, 
+                From = 0,
                 To = 1,
                 Duration = TimeSpan.FromSeconds(0.3)
             };
@@ -346,8 +335,7 @@ namespace TSODD
 
         }
 
-
-        private async void EndAnimation()
+        private void EndAnimation()
         {
             switch (type)
             {
@@ -362,7 +350,6 @@ namespace TSODD
         {
             this.Close();
         }
-
 
 
         // настройка картинки
@@ -381,18 +368,11 @@ namespace TSODD
         void GetText(int top, int left)
         {
             Random random = new Random();
-            int number = random.Next(0, txtList.Count - 1);
+            int number = random.Next(0, txtList.Count);
             text_textblock.Text = txtList[number];
             Canvas.SetLeft(text_textblock, left);
             Canvas.SetTop(text_textblock, top);
         }
-
-
-
-
-
-
-
 
     }
 }

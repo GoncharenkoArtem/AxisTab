@@ -1,17 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace TSODD.forms
 {
@@ -72,11 +62,11 @@ namespace TSODD.forms
             _lineTypeForm.selectedColorItem = itemColor;
             _lineTypeForm.brd_ColorBorder_1.Background = new SolidColorBrush(itemColor.Color_1);
             _lineTypeForm.brd_ColorBorder_2.Background = new SolidColorBrush(itemColor.Color_2);
-         
+
             this.Close();
         }
 
-    
+
         private void ButtonExit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();

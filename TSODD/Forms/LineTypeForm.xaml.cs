@@ -1,21 +1,12 @@
-﻿using Autodesk.AutoCAD.Colors;
-using Autodesk.AutoCAD.Interop.Common;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
-using System.ComponentModel;
-using static OfficeOpenXml.ExcelErrorValue;
 
 
 
@@ -44,11 +35,19 @@ namespace TSODD.forms
         public LineTypeForm()
         {
             InitializeComponent();
+
+            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var locationX = doc.Window.DeviceIndependentLocation.X;
+            var screenWidth = SystemParameters.PrimaryScreenWidth;
+
+            this.Left = locationX + screenWidth / 2 - this.Width / 2;
+            this.Top = SystemParameters.PrimaryScreenHeight / 2 - this.Height / 2;
+
             gridPattern.ItemsSource = patterns;
             gridColor.ItemsSource = colors;
             gridThickness.ItemsSource = thickness;
             gridOffset.ItemsSource = offset;
-            
+
             FillDefaultColors();
             FillComboboxLineTypes();
             TabControlChanged();
@@ -60,7 +59,7 @@ namespace TSODD.forms
 
 
         // подписка вкладок на их активацию
-        private void TabControlChanged() 
+        private void TabControlChanged()
         {
             // Подписываемся на событие, срабатывающее на изменение свойства IsSelected у вкладки Tabitem_singleLineType
             Tabitem_singleLineType.Loaded += (s, e) =>
@@ -150,12 +149,12 @@ namespace TSODD.forms
             double.TryParse(tb_LineLengt.Text, out double value);
             if (value != 0) tb_Pattern.Text = tb_Pattern.Text + $"[{Math.Abs(value)}]";
         }
-        
+
         // пробел
         private void bt_SpaceLengt_Click(object sender, RoutedEventArgs e)
         {
             double.TryParse(tb_SpaceLengt.Text, out double value);
-            if (value != 0) 
+            if (value != 0)
             {
                 if (value > 0) value = value * -1;
                 tb_Pattern.Text = tb_Pattern.Text + $"[{value}]";
@@ -177,7 +176,7 @@ namespace TSODD.forms
 
 
 
-        private bool RefreshPatternCanvas(out List<double> listValues) 
+        private bool RefreshPatternCanvas(out List<double> listValues)
         {
             CanvasLineType.Children.Clear();    // очищаем canvas
 
@@ -191,16 +190,16 @@ namespace TSODD.forms
                 if (listValues.Count < 2 || listValues.Count > 4) return false; // ошибка паттерна - выходим
             }
 
-             // подписи
+            // подписи
             if ((bool)chb_Continuous.IsChecked)
             {
-            Label label = new Label();
-            label.Content = "continuous";
-            label.Foreground = Brushes.Gray;
-            label.Background = Brushes.White;
-            Canvas.SetLeft(label, 45);
-            Canvas.SetTop(label, -15);
-            CanvasLineType.Children.Add(label);
+                Label label = new Label();
+                label.Content = "continuous";
+                label.Foreground = Brushes.Gray;
+                label.Background = Brushes.White;
+                Canvas.SetLeft(label, 45);
+                Canvas.SetTop(label, -15);
+                CanvasLineType.Children.Add(label);
             }
             else
             {
@@ -213,10 +212,10 @@ namespace TSODD.forms
                     }
                     else
                     {
-                        dashArray.Add(Math.Abs(val*2));
+                        dashArray.Add(Math.Abs(val * 2));
                     }
-                } 
-                   
+                }
+
                 double lastPos = 0;
                 bool up = true;
 
@@ -287,8 +286,8 @@ namespace TSODD.forms
                     if (double.TryParse(patternsList[i], out dist))
                     {
                         if (dist < 0 && resultList.Count == 0) continue; // если первый элемент это пробел, то скипаем его
-                        if ((lastDistSign == true && dist > 0 && resultList.Count > 0 ) ||
-                            (lastDistSign == false && dist < 0 && resultList.Count > 0 ))
+                        if ((lastDistSign == true && dist > 0 && resultList.Count > 0) ||
+                            (lastDistSign == false && dist < 0 && resultList.Count > 0))
                         {
                             resultList[resultList.Count - 1] = resultList.Last() + dist; // обновляем данные
                         }
@@ -303,7 +302,7 @@ namespace TSODD.forms
             }
             else
             {
-                if (patternsList.First() == "continuous") 
+                if (patternsList.First() == "continuous")
                 {
                     resultList.Add(1000);
                     resultList.Add(0);
@@ -331,6 +330,11 @@ namespace TSODD.forms
                 }
 
                 if (!patterns.Any(p => p == value)) patterns.Add(value);
+
+                tb_LineLengt.Clear();
+                tb_SpaceLengt.Clear();
+                tb_Pattern.Clear();
+
             }
         }
 
@@ -371,7 +375,8 @@ namespace TSODD.forms
 
             // белый-черный
             colors.Add(new ColorItem
-            {   Text = "белый / черный",
+            {
+                Text = "белый / черный",
                 Color_1 = System.Windows.Media.Color.FromArgb(255, 0, 0, 0),
                 Color_2 = System.Windows.Media.Color.FromArgb(255, 255, 255, 255),
                 Index = 7
@@ -381,7 +386,7 @@ namespace TSODD.forms
             tempColorAcad = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByAci, 2);
             tempColorWpf = System.Windows.Media.Color.FromArgb(tempColorAcad.ColorValue.A, tempColorAcad.ColorValue.R, tempColorAcad.ColorValue.G, tempColorAcad.ColorValue.B);
             txt = $"цвет 2";
-            colors.Add(new ColorItem { Text = txt, Color_1 = tempColorWpf, Color_2 = tempColorWpf, Index = 2});
+            colors.Add(new ColorItem { Text = txt, Color_1 = tempColorWpf, Color_2 = tempColorWpf, Index = 2 });
 
             // оранжевый
             tempColorAcad = Autodesk.AutoCAD.Colors.Color.FromColorIndex(Autodesk.AutoCAD.Colors.ColorMethod.ByAci, 40);
@@ -416,9 +421,9 @@ namespace TSODD.forms
             string lineType_1 = cb_firstLineType.SelectedIndex > -1 ? cb_firstLineType.SelectedValue.ToString() : "";
             string lineType_2 = cb_secondLineType.SelectedIndex > -1 ? cb_secondLineType.SelectedValue.ToString() : "";
 
-           cb_firstLineType.Items.Clear();
-           cb_secondLineType.Items.Clear();
-           var listOfLineTypes =  LineTypeReader.Parse();
+            cb_firstLineType.Items.Clear();
+            cb_secondLineType.Items.Clear();
+            var listOfLineTypes = LineTypeReader.Parse();
 
             // заполняем заново
             foreach (var lineType in listOfLineTypes)
@@ -454,7 +459,7 @@ namespace TSODD.forms
         private void bt_AddColor_Click(object sender, RoutedEventArgs e)
         {
             bool match = colors.Any(c => c.Index == selectedColorItem.Index);
-            if(!match) colors.Add(selectedColorItem);
+            if (!match) colors.Add(selectedColorItem);
         }
 
         private void bt_ColorsGallery_Click(object sender, RoutedEventArgs e)
@@ -471,7 +476,7 @@ namespace TSODD.forms
             {
                 bool match = thickness.Any(x => x == value);
                 if (!match) thickness.Add(value);
-             }
+            }
         }
 
         private void bt_addOffset_Click(object sender, RoutedEventArgs e)
@@ -493,7 +498,7 @@ namespace TSODD.forms
             dynamic dynamicObj = dc;
             string name = dynamicObj.Column1;
 
-            if (!string.IsNullOrEmpty(name)) 
+            if (!string.IsNullOrEmpty(name))
             {
                 LineTypeReader.DeleteLineTypeFromBDs(name);
             }
@@ -504,7 +509,7 @@ namespace TSODD.forms
         private void cb_LineType_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             var cb = sender as ComboBox;
-           
+
             TextBlock textBlockIsForMultiline;
             ItemsControl itemsControlPattern;
             ItemsControl itemsControlColor;
@@ -615,7 +620,7 @@ namespace TSODD.forms
                         }
                     }
                     break;
-                
+
                 case 1: // одинарные лини
                     foreach (var lt in listOfLineTypes)
                     {
@@ -638,12 +643,12 @@ namespace TSODD.forms
                         }
                     }
                     break;
-                
+
                 case 3: // только для двойной линии
                     foreach (var lt in listOfLineTypes)
                     {
                         if (lt is AcadLineType al)
-                        { 
+                        {
                             if (al.IsMlineElement)
                             {
                                 txt = "только для двойной линии";
@@ -659,7 +664,7 @@ namespace TSODD.forms
 
         private void ButtonAddLineType_Click(object sender, RoutedEventArgs e)
         {
-            IAcadDef lineType= null;
+            IAcadDef lineType = null;
 
             if (_currentTab == "Tabitem_singleLineType") lineType = new AcadLineType(); // добавляем простой тип линии
             if (_currentTab == "Tabitem_multiLineType") lineType = new AcadMLineType(); // добавляем двойной тип линии
@@ -715,7 +720,7 @@ namespace TSODD.forms
                 foreach (var value in offset) aml.Offset.Add(value);
             }
 
-            LineTypeReader.AddLineTypeToBD(lineType, messageOK:true);
+            LineTypeReader.AddLineTypeToBD(lineType, messageOK: true);
             FillComboboxLineTypes();
         }
 

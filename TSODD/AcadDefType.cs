@@ -1,24 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
-using System.IO;
-using System.Windows;
-using System.Globalization;
-using Autodesk.AutoCAD.Interop.Common;
+﻿using ACAD_test;
 using Autodesk.AutoCAD.DatabaseServices;
-using System.Windows.Documents;
+using Autodesk.AutoCAD.EditorInput;
 //using Autodesk.AutoCAD.GraphicsInterface;
 using Autodesk.AutoCAD.Runtime;
-using Autodesk.AutoCAD.Colors;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using static OfficeOpenXml.ExcelErrorValue;
-using System.Security.Cryptography;
-using Autodesk.AutoCAD.EditorInput;
-using System.Windows.Markup;
-using ACAD_test;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Text;
+using System.Windows;
 
 
 namespace TSODD
@@ -29,7 +20,7 @@ namespace TSODD
         string Name { get; set; }           // наименование
         string Description { get; set; }    // описание
         AcadDefType Type { get; }           // тип объекта
-        void ParseValue (string line);      // метод парсинга значений
+        void ParseValue(string line);      // метод парсинга значений
         bool IsReadyForAdding();            // метод, проверяет заполнены ли данные по типу линии или мультилинии
         bool IsMlineElement { get; set; }
 
@@ -161,7 +152,7 @@ namespace TSODD
         public AcadDefType Type => AcadDefType.MlineType;
         public List<double> Offset { get; set; } = new List<double>();
         public List<AcadLineType> MLineLineTypes { get; set; } = new List<AcadLineType>();
-        public bool IsMlineElement { get; set; } =  false;
+        public bool IsMlineElement { get; set; } = false;
 
         // метод парсинга значений
         public void ParseValue(string line)
@@ -185,7 +176,7 @@ namespace TSODD
                         Name = split[0].Trim();             // имя типа линии
                         Description = split[1].Trim();      // описание типа линии
                     }
-                    
+
                     break;
 
                 case 'L':   // Cтрока параметров обычного типа линии
@@ -193,8 +184,8 @@ namespace TSODD
                     line = line.Substring(1).TrimStart();                                // убираем символ 'L'
                     if (line.StartsWith(",")) line = line.Substring(1).TrimStart();      // убираем запятую
 
-                        MLineLineTypes.Add(new AcadLineType { Name = line.Trim() });     // временно сосздаем тип линии с соответствующим именем
-                    
+                    MLineLineTypes.Add(new AcadLineType { Name = line.Trim() });     // временно сосздаем тип линии с соответствующим именем
+
                     break;
 
                 case 'O':
@@ -359,10 +350,10 @@ namespace TSODD
                 // Отступы (расстояния между линиями)
                 txt += $"\nO";
                 foreach (var offset in mlt.Offset) txt += $",{offset}";
-                
+
                 txt += "\n";    // пропуск строки
             }
-            
+
             // запись в файл
             File.AppendAllText(FilesLocation.linPath, txt, new UTF8Encoding(false));
 
@@ -373,7 +364,7 @@ namespace TSODD
             RibbonInitializer.Instance.ListOfMarksLinesLoad(200, 20);
 
             if (messageOK) MessageBox.Show($"Тип линии с наименованием \"{acadLineType.Name}\" успешно добавлен в БД");
-        } 
+        }
 
 
         // метод удаляет объект типа линии или мультилинии
@@ -398,9 +389,9 @@ namespace TSODD
                 // проверка на то, что тип линии используется 
                 foreach (var acadDef in listOfLineTypes)
                 {
-                    if (acadDef is AcadMLineType acadMline) 
+                    if (acadDef is AcadMLineType acadMline)
                     {
-                        if (acadMline.MLineLineTypes.Any(l => l.Name == name)) 
+                        if (acadMline.MLineLineTypes.Any(l => l.Name == name))
                         {
                             MessageBox.Show($"Ошибка удаления типа линии. Тип линии \"{name}\" используется в двойной линии \"{acadMline.Name}\".");
                             return;
@@ -415,14 +406,14 @@ namespace TSODD
                 }
 
                 searchVal = listOfLineTypes.FirstOrDefault(l => l.Name == name);
-                if(searchVal!=null) listOfLineTypes.Remove(searchVal);
+                if (searchVal != null) listOfLineTypes.Remove(searchVal);
             }
 
             // если это тип мультилинии
             if (lineType is AcadMLineType aml)
             {
-                    searchVal = listOfLineTypes.FirstOrDefault(l => l.Name == name);
-               if (searchVal != null) listOfLineTypes.Remove(searchVal);
+                searchVal = listOfLineTypes.FirstOrDefault(l => l.Name == name);
+                if (searchVal != null) listOfLineTypes.Remove(searchVal);
             }
 
             // очищаем текущий файл типов линий
@@ -435,19 +426,19 @@ namespace TSODD
 
 
         // метод обновляет типы линии в автокаде
-        public static void  RefreshLineTypesInAcad()
+        public static void RefreshLineTypesInAcad()
         {
-        var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-        var db = doc.Database;
-      
-        // список всех типов линий (кастомных конечно)
-        var listOfLineTypes = Parse();
+            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var db = doc.Database;
 
-        // список со всеми типами линий, учитывая паттерны штриховки
-        List<string> tempList = new List<string>();
-        List<string> tempNameList = new List<string>();
-        StringBuilder sb = new StringBuilder();
-        bool dublicate = true;
+            // список всех типов линий (кастомных конечно)
+            var listOfLineTypes = Parse();
+
+            // список со всеми типами линий, учитывая паттерны штриховки
+            List<string> tempList = new List<string>();
+            List<string> tempNameList = new List<string>();
+            StringBuilder sb = new StringBuilder();
+            bool dublicate = true;
 
             foreach (var lineType in listOfLineTypes)
             {
@@ -459,10 +450,10 @@ namespace TSODD
                     {
                         string txt_val = "";
                         foreach (var val in listVal) txt_val += $",{val}";
-                        string name = $"{ lt.Name } ({ txt_val.Replace(",", "_").Substring(1).TrimStart()})";
+                        string name = $"{lt.Name} ({txt_val.Replace(",", "_").Substring(1).TrimStart()})";
 
                         // проверка на сплошную линию
-                        if (listVal.Contains(1000))  name = $"{lt.Name} (continuous)";
+                        if (listVal.Contains(1000)) name = $"{lt.Name} (continuous)";
 
                         dublicate = tempNameList.Any(n => n == name);
 
@@ -479,7 +470,7 @@ namespace TSODD
             }
 
             // запись всех типов линий с учетом всех паттернов штриховки
-            File.WriteAllLines(FilesLocation.tempLinPath, tempList);
+            File.WriteAllLines(FilesLocation.separatedLinPath, tempList);
 
             foreach (var lineType in tempNameList)
             {
@@ -489,7 +480,7 @@ namespace TSODD
                     {
                         var ltt = (LinetypeTable)tr.GetObject(db.LinetypeTableId, OpenMode.ForRead);
 
-                        if (!ltt.Has(lineType)) db.LoadLineTypeFile(lineType, FilesLocation.tempLinPath);    // грузим тип линии в автокад
+                        if (!ltt.Has(lineType)) db.LoadLineTypeFile(lineType, FilesLocation.separatedLinPath);    // грузим тип линии в автокад
                         tr.Commit();
                     }
                 }
@@ -509,69 +500,69 @@ namespace TSODD
 
                 using (doc.LockDocument())
                 {
-                        if (!ltt.Has(name))
-                        {
-                            tr.Commit();
-                            return true; // если такой тип линии не был подгружен, то и нечего удалять
-                        }
-                       
-                        //  если текущий тип равен удаляемому — переключим на CONTINUOUS
-                        var cur = (string)Autodesk.AutoCAD.ApplicationServices.Application.GetSystemVariable("CELTYPE");
-                        if (string.Equals(cur, name, System.StringComparison.OrdinalIgnoreCase))
-                            Autodesk.AutoCAD.ApplicationServices.Application.SetSystemVariable("CELTYPE", "CONTINUOUS");
-
-                        // пробуем переназначить у объектов тип линии
-                        var ltrIdToDelete = ltt[name];
-                        var continuousId = ltt["CONTINUOUS"];
-
-                        var layerTable = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
-                        foreach (ObjectId layerId in layerTable)
-                        {
-                            var temp_ltr = (LayerTableRecord)tr.GetObject(layerId, OpenMode.ForRead);
-                            if (temp_ltr.LinetypeObjectId == ltrIdToDelete)
-                            {
-                                temp_ltr.UpgradeOpen();
-                                temp_ltr.LinetypeObjectId = continuousId;
-                            }
-                        }
-
-                        //  Объекты с LineType на уровне объекта 
-                        var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
-
-                        foreach (ObjectId btrId in bt)
-                        {
-                            var btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
-
-                            foreach (ObjectId entId in btr)
-                            {
-                                if (!entId.ObjectClass.IsDerivedFrom(RXObject.GetClass(typeof(Entity))))
-                                    continue;
-
-                                var ent = (Entity)tr.GetObject(entId, OpenMode.ForRead);
-                                if (ent.LinetypeId == ltrIdToDelete)
-                                {
-                                    ent.UpgradeOpen();
-                                    ent.LinetypeId =  continuousId;
-                                }
-                            }
-                        }
-
-                        // пургеним тип линии
-                        var ids = new ObjectIdCollection(new[] { ltrIdToDelete });
-                        db.Purge(ids);                 
-                        if (ids.Count == 0)            // всё ещё где-то используется (на объектах и т.п.) беда, придется пользователю вручную удалять
-                        {
-                            tr.Commit();
-                            return false;
-                        }
-
-
-                        // ну и удаляем из таблицы автокада типов линий
-                        var ltr = (LinetypeTableRecord)tr.GetObject(ltrIdToDelete, OpenMode.ForWrite);
-                        ltt.UpgradeOpen();
-                        ltr.Erase(true);
+                    if (!ltt.Has(name))
+                    {
                         tr.Commit();
-                        return true;
+                        return true; // если такой тип линии не был подгружен, то и нечего удалять
+                    }
+
+                    //  если текущий тип равен удаляемому — переключим на CONTINUOUS
+                    var cur = (string)Autodesk.AutoCAD.ApplicationServices.Application.GetSystemVariable("CELTYPE");
+                    if (string.Equals(cur, name, System.StringComparison.OrdinalIgnoreCase))
+                        Autodesk.AutoCAD.ApplicationServices.Application.SetSystemVariable("CELTYPE", "CONTINUOUS");
+
+                    // пробуем переназначить у объектов тип линии
+                    var ltrIdToDelete = ltt[name];
+                    var continuousId = ltt["CONTINUOUS"];
+
+                    var layerTable = (LayerTable)tr.GetObject(db.LayerTableId, OpenMode.ForRead);
+                    foreach (ObjectId layerId in layerTable)
+                    {
+                        var temp_ltr = (LayerTableRecord)tr.GetObject(layerId, OpenMode.ForRead);
+                        if (temp_ltr.LinetypeObjectId == ltrIdToDelete)
+                        {
+                            temp_ltr.UpgradeOpen();
+                            temp_ltr.LinetypeObjectId = continuousId;
+                        }
+                    }
+
+                    //  Объекты с LineType на уровне объекта 
+                    var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForRead);
+
+                    foreach (ObjectId btrId in bt)
+                    {
+                        var btr = (BlockTableRecord)tr.GetObject(btrId, OpenMode.ForRead);
+
+                        foreach (ObjectId entId in btr)
+                        {
+                            if (!entId.ObjectClass.IsDerivedFrom(RXObject.GetClass(typeof(Entity))))
+                                continue;
+
+                            var ent = (Entity)tr.GetObject(entId, OpenMode.ForRead);
+                            if (ent.LinetypeId == ltrIdToDelete)
+                            {
+                                ent.UpgradeOpen();
+                                ent.LinetypeId = continuousId;
+                            }
+                        }
+                    }
+
+                    // пургеним тип линии
+                    var ids = new ObjectIdCollection(new[] { ltrIdToDelete });
+                    db.Purge(ids);
+                    if (ids.Count == 0)            // всё ещё где-то используется (на объектах и т.п.) беда, придется пользователю вручную удалять
+                    {
+                        tr.Commit();
+                        return false;
+                    }
+
+
+                    // ну и удаляем из таблицы автокада типов линий
+                    var ltr = (LinetypeTableRecord)tr.GetObject(ltrIdToDelete, OpenMode.ForWrite);
+                    ltt.UpgradeOpen();
+                    ltr.Erase(true);
+                    tr.Commit();
+                    return true;
                 }
             }
         }
@@ -619,12 +610,6 @@ namespace TSODD
             }
 
         }
-
-
-
-
-
-
 
     }
 }

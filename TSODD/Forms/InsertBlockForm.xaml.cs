@@ -1,20 +1,11 @@
 ﻿using Autodesk.AutoCAD.DatabaseServices;
-using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Xml.Linq;
 
 namespace TSODD.Forms
 {
@@ -48,7 +39,7 @@ namespace TSODD.Forms
             if (cb_TypeOfElements.SelectedIndex == 0) _currentGroup = "SIGN";
             if (cb_TypeOfElements.SelectedIndex == 1) _currentGroup = "MARK";
             FillListViewByGroups();
-            if(lv_Groups.Items.Count>0) lv_Groups.SelectedIndex = 0;
+            if (lv_Groups.Items.Count > 0) lv_Groups.SelectedIndex = 0;
         }
 
         private void FillListViewByGroups()
@@ -73,7 +64,7 @@ namespace TSODD.Forms
                 }
             }
 
-            foreach (var group in groups) { _groups.Add(group);}
+            foreach (var group in groups) { _groups.Add(group); }
         }
 
         private void lv_Groups_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -111,7 +102,7 @@ namespace TSODD.Forms
             var selectedVal = lv_Blocks.SelectedValue as BlockForInsert;
             if (selectedVal == null) return;
             if (lv_Groups.SelectedValue == null) return;
-            
+
             this.Close();
 
             if (cb_TypeOfElements.SelectedIndex == 0)
@@ -120,7 +111,7 @@ namespace TSODD.Forms
             }
             else
             {
-                TsoddBlock.InsertStandOrMarkBlock(selectedVal.Name);
+                TsoddBlock.InsertStandOrMarkBlock(selectedVal.Name, false);
             }
         }
 
@@ -133,7 +124,7 @@ namespace TSODD.Forms
             if (blockName == null) return;
 
             // спрашиваем
-            var message = MessageBox.Show($"Удалить блок \"{blockName.Name}\" из БД?","Удаление блока",MessageBoxButton.YesNo,MessageBoxImage.Question);
+            var message = MessageBox.Show($"Удалить блок \"{blockName.Name}\" из БД?", "Удаление блока", MessageBoxButton.YesNo, MessageBoxImage.Question);
             if (message == MessageBoxResult.Yes)
             {
                 TsoddBlock.DeleteBlockFromBD(blockName.Name);
@@ -153,7 +144,7 @@ namespace TSODD.Forms
             this.Close();
         }
 
-    
+
     }
 
 
@@ -168,7 +159,7 @@ namespace TSODD.Forms
 
     public class BlockForInsert
     {
-        public string Name {get;set;} 
+        public string Name { get; set; }
         public BitmapSource BMPsource { get; set; }
     }
 

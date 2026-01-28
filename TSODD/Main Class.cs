@@ -1,17 +1,5 @@
-﻿using System;
+﻿using Autodesk.AutoCAD.DatabaseServices;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.Geometry;
-using System.Windows;
-using Autodesk.AutoCAD.Runtime;
-using ACAD_test;
-using Autodesk.Windows;
-using TSODD;
 
 namespace TSODD
 {
@@ -28,7 +16,7 @@ namespace TSODD
     }
 
 
-    public interface IRefBlock 
+    public interface IRefBlock
     {
         ObjectId ID { get; set; }                   // ID блока
         string Tag { get; }                         // тег блока 
@@ -74,7 +62,7 @@ namespace TSODD
         public string Existence { get; set; }       // наличие ( Необходимо установить / Необходимо демонтировать)
 
     }
-    
+
 
 
 

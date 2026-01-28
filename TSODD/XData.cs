@@ -1,14 +1,6 @@
 ﻿using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.EditorInput;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows.Controls;
-using System.Windows.Documents;
-using System.Collections.Generic;
-using TSODD;
 
 
 
@@ -28,7 +20,7 @@ namespace ACAD_test
         private static void GetAppReg(Transaction tr, Database db)
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
-           
+
             RegAppTable rat = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);   // таблица зарегистрированных приложений
             if (!rat.Has(AppName))
             {
@@ -37,13 +29,13 @@ namespace ACAD_test
                 rat.Add(rec);
                 tr.AddNewlyCreatedDBObject(rec, true);
             }
-            
+
         }
 
 
 
         // метод записывет XData в Entity
-        public static void UpdateXData(ObjectId objId, List<(int code,string value)> list)
+        public static void UpdateXData(ObjectId objId, List<(int code, string value)> list)
         {
             if (objId.IsNull) throw new ArgumentNullException(nameof(objId));
             var db = objId.Database ?? Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument.Database; // получаем БД объекта
@@ -65,11 +57,11 @@ namespace ACAD_test
 
                         // создаем буфер для записи XData
                         ResultBuffer buff = new ResultBuffer { new TypedValue((int)DxfCode.ExtendedDataRegAppName, AppName) };
-                        if (list != null)  foreach (var val in list) buff.Add(new TypedValue(val.code, val.value));
+                        if (list != null) foreach (var val in list) buff.Add(new TypedValue(val.code, val.value));
 
                         // обновляем XData
                         ent.XData = AddXDataSection(ent.XData, buff);
-      
+
                         tr.Commit();
                     }
                 }
@@ -111,7 +103,7 @@ namespace ACAD_test
 
 
         // метод считывает XData у объекта 
-        public static List<(int,string)> ReadXData(ObjectId objId)
+        public static List<(int, string)> ReadXData(ObjectId objId)
         {
             List<(int, string)> result = new List<(int, string)>();
 
@@ -161,10 +153,10 @@ namespace ACAD_test
     /// </summary>
     public class TsoddXdataElement
     {
-        public TsoddElement Type {  get; set; }
+        public TsoddElement Type { get; set; }
         public ObjectId MasterPolylineID { get; set; } = ObjectId.Null;
         public ObjectId SlavePolylineID { get; set; } = ObjectId.Null;
-        public ObjectId MtextID {  get; set; } = ObjectId.Null;
+        public ObjectId MtextID { get; set; } = ObjectId.Null;
         public ObjectId AxisPolylineID { get; set; } = ObjectId.Null;
         public string AxisHandle { get; set; } = string.Empty;
         public string Number { get; set; } = string.Empty;
@@ -175,8 +167,8 @@ namespace ACAD_test
 
         public void Parse(ObjectId objectId)
         {
-            ListXdata = AutocadXData.ReadXData(objectId); 
-            if (ListXdata.Count==0) { return; } //  пустая XData
+            ListXdata = AutocadXData.ReadXData(objectId);
+            if (ListXdata.Count == 0) { return; } //  пустая XData
 
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
@@ -251,7 +243,7 @@ namespace ACAD_test
                             // если по какой-то причине XDatra master полилинии пустая, то выходим
                             if (ListXdata.Count == 0) break;
 
-                             tempHandle = new Handle(Convert.ToInt64(ListXdata[3].value, 16));               // handle slave полилинии
+                            tempHandle = new Handle(Convert.ToInt64(ListXdata[3].value, 16));               // handle slave полилинии
 
                             if (!string.Equals(tempHandle.ToString(), "0"))                                 // мультилиния
                             {
@@ -268,9 +260,11 @@ namespace ACAD_test
 
                             break;
                     }
+
+                    tr.Commit();
                 }
             }
- 
+
         }
     }
 

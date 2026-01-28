@@ -1,26 +1,14 @@
-﻿using Autodesk.AutoCAD.Runtime;
+﻿using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.Runtime;
 using Autodesk.Windows;
-using System.Windows.Input;
-using System.Linq;
 using System;
-using System.Windows;
-using System.Windows.Media.Imaging;
-using TSODD;
-using Autodesk.AutoCAD.ApplicationServices;
 using System.Collections.Generic;
-using Autodesk.AutoCAD.DatabaseServices;
+using System.Linq;
 using System.Windows.Controls;
-using Autodesk.AutoCAD.GraphicsInterface;
-using Autodesk.AutoCAD.Windows.Data;
-using Autodesk.AutoCAD.EditorInput;
-using static System.Net.Mime.MediaTypeNames;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement;
-using Autodesk.AutoCAD.Windows;
-using System.Xml.Linq;
+using System.Windows.Input;
+using TSODD;
 using TSODD.forms;
 using TSODD.Forms;
-using System.IO;
-using OfficeOpenXml.FormulaParsing.Excel.Functions.Text;
 
 
 namespace ACAD_test
@@ -29,11 +17,8 @@ namespace ACAD_test
     {
         public static RibbonInitializer Instance { get; private set; }
         private RibbonCombo axisCombo = new RibbonCombo();
-        //public RibbonCombo signsGroups = new RibbonCombo();
-        //public RibbonCombo marksCombo = new RibbonCombo();
 
         public RibbonSplitButton splitStands = new RibbonSplitButton();
-        //private RibbonSplitButton splitSigns = new RibbonSplitButton();
         public RibbonSplitButton splitMarksLineTypes = new RibbonSplitButton();
         public RibbonButton quickProperties = new RibbonButton();
 
@@ -46,9 +31,7 @@ namespace ACAD_test
         private RibbonCombo comboLineTypeColor_1 = new RibbonCombo();
         private RibbonCombo comboLineTypeColor_2 = new RibbonCombo();
         private RibbonCombo comboLineTypeOffset = new RibbonCombo();
-        private RibbonLabel labelLineType = new RibbonLabel(); 
-
-        //  private RibbonSplitButton splitMarks = new RibbonSplitButton();
+        private RibbonLabel labelLineType = new RibbonLabel();
 
         public RibbonPanelSource panelSourceMarks;
 
@@ -61,7 +44,6 @@ namespace ACAD_test
         public bool quickPropertiesOn = false;
         public SelectionFormBlocks selectioForm = null;
 
-
         public void Initialize()
         {
             //return;
@@ -73,10 +55,9 @@ namespace ACAD_test
             var dm = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager;
             dm.DocumentActivated += Dm_DocumentActivated;
             dm.DocumentToBeDestroyed += Dm_DocumentToBeDestroyed;
-         
+
         }
 
-   
 
         public void Terminate()
         {
@@ -102,7 +83,7 @@ namespace ACAD_test
                 _dbIntPtr.Remove(key);
             }
         }
- 
+
         private void OnItemInitialized(object sender, EventArgs e)
         {
             if (ComponentManager.Ribbon != null)
@@ -114,7 +95,7 @@ namespace ACAD_test
                 AddRibbonPanel();
 
                 // предвыбор значений
-                TsoddBlock.PreSelectOfGroups();
+                //TsoddBlock.PreSelectOfGroups();
 
                 // внутренний метод, который первоначально настраивает RibbonSplitButton
                 void InitializeSplitButtons(RibbonSplitButton split, string name)
@@ -131,7 +112,7 @@ namespace ACAD_test
                 InitializeSplitButtons(splitStands, "Стойки");
                 // заполняем 
                 FillBlocksMenu(splitStands, "STAND");
-                
+
                 // обновляем  элементы LineType
                 ListOfMarksLinesLoad(200, 20);
                 LineTypeReader.RefreshLineTypesInAcad();
@@ -141,6 +122,8 @@ namespace ACAD_test
 
         private void AddRibbonPanel()
         {
+            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+
             RibbonControl ribbon = ComponentManager.Ribbon;
             if (ribbon == null)
                 return;
@@ -160,7 +143,7 @@ namespace ACAD_test
 
 
             /* ************************************************         ОСИ            ************************************************ */
-            
+
             RibbonPanelSource panelSourceAxis = new RibbonPanelSource
             {
                 Title = "Ось"
@@ -184,7 +167,7 @@ namespace ACAD_test
 
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    NewAxis();
+                    doc?.SendStringToExecute("NEW_AXIS ", true, false, false);
                 })
             };
             panelSourceAxis.Items.Add(bt_newAxis);
@@ -211,12 +194,12 @@ namespace ACAD_test
                 Image = LoadImage("pack://application:,,,/TSODD;component/images/axis_name.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    TsoddCommands.Cmd_AxisName();
+                    doc?.SendStringToExecute("SET_AXIS_NAME ", true, false, false);
                 })
             };
 
 
-    
+
             // Кнопка изменения начальной точки
             var bt_startPoint = new RibbonButton
             {
@@ -227,11 +210,9 @@ namespace ACAD_test
                 Image = LoadImage("pack://application:,,,/TSODD;component/images/axis_startPoint.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    TsoddCommands.Cmd_AxisStartPoint();
+                    doc?.SendStringToExecute("SET_AXIS_START_POINT ", true, false, false);
                 })
             };
-
-
 
 
             // Кнопки рядом + разделитель между ними
@@ -256,7 +237,7 @@ namespace ACAD_test
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/axis_setPK.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    SetPkOnAxis();
+                    doc?.SendStringToExecute("SET_PK ", true, false, false); 
                 })
             };
 
@@ -270,7 +251,7 @@ namespace ACAD_test
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/axis_getPK.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    GetPkOnAxis();
+                    doc?.SendStringToExecute("GET_PK ", true, false, false);
                 })
             };
 
@@ -303,8 +284,8 @@ namespace ACAD_test
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/stand_bindToAxis.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    TsoddBlock.ReBindStandBlockToAxis();
-          
+                    doc?.SendStringToExecute("BIND_TO_AXIS ", true, false, false);
+
                 })
             };
 
@@ -334,9 +315,7 @@ namespace ACAD_test
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/block_insert.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    InsertBlockForm insertBlockForm = new InsertBlockForm();
-                    insertBlockForm.ShowDialog();
-
+                    doc?.SendStringToExecute("INSERT_TSODD_BLOCK ", true, false, false);
                 })
             };
             panelSourceBlocks.Items.Add(insertBlock);
@@ -351,8 +330,7 @@ namespace ACAD_test
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/block_user.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    TsoddBlock.CreateUserMarkBlock();
-
+                    doc?.SendStringToExecute("USER_MARK_BLOCK ", true, false, false);
                 })
             };
             panelSourceBlocks.Items.Add(userBlock);
@@ -361,7 +339,7 @@ namespace ACAD_test
 
             panelSourceMarks = new RibbonPanelSource
             {
-                Title = "Разметка"
+                Title = "Линейная разметка"
             };
 
             RibbonPanel panel_4 = new RibbonPanel
@@ -370,12 +348,12 @@ namespace ACAD_test
             };
             tab.Panels.Add(panel_4);
 
+            // типы линий
+
             splitMarksLineTypes.Width = 60;
             splitMarksLineTypes.Size = RibbonItemSize.Large;
             splitMarksLineTypes.IsSplit = true;
             panelSourceMarks.Items.Add(splitMarksLineTypes);
-
-            // типы линий
 
             // первый тип линии
             var rowLineType_1 = new RibbonRowPanel();
@@ -433,7 +411,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    LineTypeInvert();
+                    doc?.SendStringToExecute("MARK_LINE_INVERT ", true, false, false);
                 })
             };
             panelSourceMarks.Items.Add(bt_invertLineType);
@@ -449,7 +427,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                     LineTypeTextInvert();
+                    doc?.SendStringToExecute("MARK_LINE_TEXT_INVERT ", true, false, false);
                 })
             };
             panelSourceMarks.Items.Add(bt_invertTextPosition);
@@ -478,13 +456,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    //soddBlock.BuildTemplateDWG();
-                    // LineTypeTextInvert();
-                    //ExportEnd exportEnd = new ExportEnd();
-                    //exportEnd.ShowDialog();
-
-                    OptionsForm optionsForm = new OptionsForm();
-                    optionsForm.ShowDialog();
+                    doc?.SendStringToExecute("OPTIONS_TSODD ", true, false, false);
                 })
             };
             panelSourceOptions.Items.Add(bt_options);
@@ -499,8 +471,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    LoadBlock loadBlockForm = new LoadBlock();
-                    loadBlockForm.ShowDialog();
+                    doc?.SendStringToExecute("LOAD_BLOCK_TO_DB ", true, false, false);
                 })
             };
             panelSourceOptions.Items.Add(bt_addBlockToBD);
@@ -515,8 +486,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    LineTypeForm lineTypeForm = new LineTypeForm();
-                    lineTypeForm.ShowDialog();
+                    doc?.SendStringToExecute("LOAD_MARK_LINE_TO_DB ", true, false, false);
                 })
             };
             panelSourceOptions.Items.Add(bt_addLineTypeToBD);
@@ -532,8 +502,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    GroupsAddForm groupsAddForm = new GroupsAddForm();  
-                    groupsAddForm.ShowDialog();
+                    doc?.SendStringToExecute("GROUPS_TSODD ", true, false, false);
                 })
             };
             panelSourceOptions.Items.Add(bt_addGroups);
@@ -563,8 +532,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    ObjectSelectionForm objectSelectionForm = new ObjectSelectionForm();
-                    objectSelectionForm.ShowDialog();
+                    doc?.SendStringToExecute("SELECT_TSODD_OBJECTS ", true, false, false);
                 })
             };
             panelSourceSelection.Items.Add(bt_quickSelection);
@@ -579,11 +547,10 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    CreateMLeaderForTsoddObject();
+                    doc?.SendStringToExecute("MULTILEADER_TSODD ", true, false, false);
                 })
             };
             panelSourceSelection.Items.Add(bt_mleader);
-
 
             quickProperties.Name = "";
             quickProperties.Text = "Свойства";
@@ -593,10 +560,7 @@ namespace ACAD_test
             quickProperties.Size = RibbonItemSize.Large;
             quickProperties.CommandHandler = new RelayCommandHandler(() =>
             {
-                quickPropertiesOn = !quickPropertiesOn;
-                if (quickPropertiesOn) { quickProperties.LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/quickProperties_ON.png"); }
-                else { quickProperties.LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/quickProperties_OFF.png"); }
-
+                doc?.SendStringToExecute("QUICK_PROPERTIES_TSODD_ON/OFF ", true, false, false);
             });
             panelSourceSelection.Items.Add(quickProperties);
 
@@ -615,7 +579,7 @@ namespace ACAD_test
             };
             tab.Panels.Add(panel_7);
 
-      
+
             var bt_exportExcelSigns = new RibbonButton
             {
                 Text = "Знаки",
@@ -625,8 +589,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    var export = new ExportExcel();
-                    export.ExportSigns();
+                    doc?.SendStringToExecute("EXPORT_SIGNS ", true, false, false);
                 })
             };
 
@@ -641,8 +604,7 @@ namespace ACAD_test
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    var export = new ExportExcel();
-                    export.ExportMarks();
+                    doc?.SendStringToExecute("EXPORT_МАRKS ", true, false, false);
                 })
             };
 

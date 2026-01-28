@@ -1,12 +1,6 @@
 ﻿using ACAD_test;
-using Autodesk.AutoCAD.ApplicationServices;
-using Autodesk.AutoCAD.ApplicationServices.Core;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using System.Windows;
 
 namespace TSODD
 {
@@ -14,9 +8,9 @@ namespace TSODD
     {
         public static readonly Dictionary<IntPtr, DrawingTSODD> tsoddDictionary = new Dictionary<IntPtr, DrawingTSODD>();
 
-        public static DrawingTSODD Current 
+        public static DrawingTSODD Current
         {
-            get 
+            get
             {
                 var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
                 if (doc is null) throw new InvalidOperationException("Нет активного документа.");

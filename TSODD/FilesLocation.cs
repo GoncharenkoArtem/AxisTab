@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.IO;
 using System.Reflection;
-using System.IO;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace TSODD
 {
@@ -22,7 +17,7 @@ namespace TSODD
         public static string dwgBlocksPath = Path.Combine(dllPath, "Support", "blocks.dwg");
         public static string dwgTemplatePath = Path.Combine(dllPath, "Support", "templates.dwg");
         public static string linPath = Path.Combine(dllPath, "Support", "LineTypes.lin");
-        public static string tempLinPath = Path.Combine(dllPath, "Support", "TempLineTypes.lin");
+        public static string separatedLinPath = Path.Combine(dllPath, "Support", "SeparatedLineTypes.lin");
 
 
     }

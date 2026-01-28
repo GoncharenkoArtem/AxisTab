@@ -1,13 +1,7 @@
-﻿using System;
+﻿using OfficeOpenXml;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Text.Json;
-using System.Threading.Tasks;
-using OfficeOpenXml;
-using OfficeOpenXml.Style;
 
 namespace TSODD
 {
@@ -31,7 +25,7 @@ namespace TSODD
         // helper для сохранения имен в шапке таблиц и 
         private static void CreateTableHeader()
         {
-     
+
             // шапка для таблицы со знаками
             List<string> signsHeader = new List<string>
             {
@@ -69,7 +63,7 @@ namespace TSODD
             // серриализуем в json
             SaveToJson(marksHeader, FilesLocation.JsonTableHeaderMarksPath);
 
-            
+
             // словарь для имен знаков
             Dictionary<string, string> signNames = new Dictionary<string, string>();
 

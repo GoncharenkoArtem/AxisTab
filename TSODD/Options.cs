@@ -1,13 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TSODD
+﻿namespace TSODD
 {
     public class Options
-    {  
+    {
         // блоки
         public bool BlocksAnnotativeState { get; set; } = false;
         public double BlockBindRadius { get; set; } = 5;

@@ -1,9 +1,5 @@
 ﻿using ACAD_test;
 using Autodesk.AutoCAD.DatabaseServices;
-using Autodesk.AutoCAD.Geometry;
-using Autodesk.AutoCAD.GraphicsInterface;
-using Autodesk.AutoCAD.GraphicsSystem;
-using Autodesk.AutoCAD.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,20 +7,8 @@ using System.ComponentModel;
 using System.Drawing;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Xml.Linq;
-using static OfficeOpenXml.ExcelErrorValue;
 
 
 namespace TSODD.forms
@@ -33,7 +17,7 @@ namespace TSODD.forms
     /// <summary>
     ///  Класс для заполнения DataGrid
     /// </summary>
-    public class DataGridValue:INotifyPropertyChanged
+    public class DataGridValue : INotifyPropertyChanged
     {
 
         public string Name { get; set; }
@@ -56,7 +40,7 @@ namespace TSODD.forms
         public bool Value
         {
             get => _value;
-            set 
+            set
             {
                 if (_value == value) return;
                 _value = value;
@@ -111,8 +95,8 @@ namespace TSODD.forms
             var locationX = doc.Window.DeviceIndependentLocation.X;
             var screenWidth = SystemParameters.PrimaryScreenWidth;
 
-            this.Left = locationX + screenWidth / 2 - this.Width/2 ;
-            this.Top =  SystemParameters.PrimaryScreenHeight / 2 - this.Height/2 ;
+            this.Left = locationX + screenWidth / 2 - this.Width / 2;
+            this.Top = SystemParameters.PrimaryScreenHeight / 2 - this.Height / 2;
 
             gridAttributes.ItemsSource = dataGridValues;
 
@@ -153,7 +137,7 @@ namespace TSODD.forms
                 using (var tr = db.TransactionManager.StartTransaction())
                 {
 
-                    _updateFlag=false;
+                    _updateFlag = false;
                     RibbonInitializer.Instance.readyToDeleteEntity = false; // запрещаем анализировать объекты при удалении
 
                     var id = listElementsID[0];
@@ -176,7 +160,7 @@ namespace TSODD.forms
                     HashSet<string> dublicateValues = new HashSet<string> { "STAND", "ОСЬ", "SIGN", "GROUP", "STANDHANDLE", "DOUBLED",
                                                                              "НОМЕР_ЗНАКА", "TYPESIZE", "SIGNEXISTENCE", "MARK", "MATERIAL","MARKEXISTENCE" };
 
-                    List<string> preSelect = new List<string> 
+                    List<string> preSelect = new List<string>
                     {
                         "m","м","т","таможня","опасность","стоп","контроль",
                         "customs","danger","stop","такси","зона","объезд",
@@ -186,14 +170,14 @@ namespace TSODD.forms
                     foreach (ObjectId arId in _btr)
                     {
                         //var ar = (AttributeReference)tr.GetObject(arId, OpenMode.ForRead);
-                        Entity ent  = (Entity)tr.GetObject(arId, OpenMode.ForRead);
+                        Entity ent = (Entity)tr.GetObject(arId, OpenMode.ForRead);
 
                         if (ent.Visible == false)   // если объекты невидимы, то не добавляем их в блок
                         {
                             invisibleObjects.Add(ent.Id);
                             continue;
-                        } 
-                        
+                        }
+
                         if (ent is AttributeDefinition attr)
                         {
                             if (!dublicateValues.Contains(attr.Tag.ToString()))
@@ -211,7 +195,7 @@ namespace TSODD.forms
 
                         string txt = string.Empty;
                         bool matchValue = false;
-                        
+
                         switch (ent.GetRXClass().DxfName)
                         {
                             case "TEXT":
@@ -232,11 +216,11 @@ namespace TSODD.forms
                             matchValue = preSelect.Any(p => p.Equals(txt, StringComparison.OrdinalIgnoreCase));
                             if (matchValue)
                             {
-                                dataGridValues.Add(new DataGridValue { ID = ent.Id, Name = txt, DataGridName = $"текст: {txt}", Value = true , IsEnabled =true});
+                                dataGridValues.Add(new DataGridValue { ID = ent.Id, Name = txt, DataGridName = $"текст: {txt}", Value = true, IsEnabled = true });
                             }
                             else
                             {
-                                dataGridValues.Add(new DataGridValue {ID = ent.Id, Name = txt, DataGridName = $"текст: {txt}", Value = false , IsEnabled = true });
+                                dataGridValues.Add(new DataGridValue { ID = ent.Id, Name = txt, DataGridName = $"текст: {txt}", Value = false, IsEnabled = true });
                             }
                             dublicateValues.Add(txt);
                         }
@@ -244,9 +228,9 @@ namespace TSODD.forms
 
                     // прописываем имя блока 
                     tb_blockName.Text = _btr.Name;
-                   
+
                     // заполняем имя знака (если выбран соответствующий radiobutton)
-                    FillSignName(); 
+                    FillSignName();
 
                     _updateFlag = true;
 
@@ -342,9 +326,9 @@ namespace TSODD.forms
                                 {
                                     continue;
                                 }
-                                else 
+                                else
                                 {
-                                    if( match.Value == false) continue;
+                                    if (match.Value == false) continue;
                                 }
                                 break;
                         }
@@ -354,7 +338,7 @@ namespace TSODD.forms
 
                     // временный блок для картинки
                     var bt = (BlockTable)tr.GetObject(db.BlockTableId, OpenMode.ForWrite);
-         
+
                     if (bt.Has("tempBlockForPreviewIcon"))
                     {
                         var id = bt["tempBlockForPreviewIcon"];
@@ -395,7 +379,7 @@ namespace TSODD.forms
 
                     // делаем snapshot
                     _bmpBlockIcon = TsoddBlock.GetBlockBitmap(tempBtr, 250, out _extents);
-                    var bmpSource= TsoddBlock.ToImageSource(_bmpBlockIcon);
+                    var bmpSource = TsoddBlock.ToImageSource(_bmpBlockIcon);
                     im_blockImage.Source = bmpSource;    // обновляем картинку
 
                     // если это стойка, то для preview блока надо сделать маленькую картинку
@@ -413,7 +397,7 @@ namespace TSODD.forms
                     tr.Commit();
                 }
             }
-        RibbonInitializer.Instance.readyToDeleteEntity = true; // разрешаем анализировать объекты при удалении
+            RibbonInitializer.Instance.readyToDeleteEntity = true; // разрешаем анализировать объекты при удалении
         }
 
 
@@ -466,7 +450,7 @@ namespace TSODD.forms
             tb_signName.Visibility = System.Windows.Visibility.Visible;
 
             tb_signName.Visibility = System.Windows.Visibility.Visible;
-            
+
             // заполняем имя знака
             FillSignName();
 
@@ -536,7 +520,7 @@ namespace TSODD.forms
             if (!(bool)rb_Sign.IsChecked) return;
 
             string combinedName = string.Empty;
-            string name_1 = tb_blockName.Text.Trim(); 
+            string name_1 = tb_blockName.Text.Trim();
             string name_2 = string.Empty;
             string fullName = tb_blockName.Text.Trim();
             var signNames = JsonReader.LoadFromJson<Dictionary<string, string>>(FilesLocation.JsonTableNamesSignsPath);     // имена знаков
@@ -572,7 +556,7 @@ namespace TSODD.forms
                 }
                 else
                 {
-                   return "знак не найден в БД";
+                    return "знак не найден в БД";
                 }
             }
 
@@ -593,7 +577,7 @@ namespace TSODD.forms
 
         private void bt_Ok_Click(object sender, RoutedEventArgs e)
         {
-  
+
             string template = string.Empty;
             if ((bool)rb_Stand.IsChecked) template = "STAND_TEMPLATE";
             if ((bool)rb_Sign.IsChecked) template = "SIGN_TEMPLATE";
@@ -621,7 +605,7 @@ namespace TSODD.forms
             if ((bool)rb_Mark.IsChecked)
             {
                 bool match = dataGridValues.Any(v => v.Name.Contains("PK_VAL"));
-                if (!match) 
+                if (!match)
                 {
                     MessageBox.Show("Ошибка загрузки блока разметки. Блок должен иметь хотябы один атрибут с наименованием \"PK_VAL...\". " +
                                     "\n Пример:\"PK_VAL_1\" или \"PK_VAL_LEFT\".\n Так же, желательно, сделать данные атрибуты скрытыми.");
@@ -640,8 +624,8 @@ namespace TSODD.forms
             }
 
             // добавляем блок в БД
-            TsoddBlock.AddBlockToBD(template, _btr, blockName, blockNumber, dataGridValues, invisibleObjects, 
-                                    _extents, _bmpBlockIcon, (bool)chb_singleSign.IsChecked, cb_Groups.SelectedValue?.ToString()??"");
+            TsoddBlock.AddBlockToBD(template, _btr, blockName, blockNumber, dataGridValues, invisibleObjects,
+                                    _extents, _bmpBlockIcon, (bool)chb_singleSign.IsChecked, cb_Groups.SelectedValue?.ToString() ?? "");
 
             // заполняем список стоек 
             if ((bool)rb_Stand.IsChecked) RibbonInitializer.Instance.FillBlocksMenu(RibbonInitializer.Instance.splitStands, "STAND", blockName);
@@ -687,7 +671,7 @@ namespace TSODD.forms
                         signGroups = TsoddBlock.GetListGroups("SIGN_GROUPS", trExt, extDb);
                         cb_Groups.ItemsSource = signGroups;
                     }
-                    else 
+                    else
                     {
                         markGroups = TsoddBlock.GetListGroups("MARK_GROUPS", trExt, extDb);
                         cb_Groups.ItemsSource = signGroups;

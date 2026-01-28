@@ -163,7 +163,7 @@
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="Blocks.cs" />
-    <Compile Include="Class1.cs" />
+    <Compile Include="Options.cs" />
     <Compile Include="FilesLocation.cs" />
     <Compile Include="Forms\LineTypeForm.xaml.cs">
       <DependentUpon>LineTypeForm.xaml</DependentUpon>

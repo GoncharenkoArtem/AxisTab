@@ -2,24 +2,12 @@
 using ACAD_test;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Runtime;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
-using System.Xml.Schema;
-using System.Xml.XPath;
 
 namespace TSODD.Forms
 {
@@ -30,10 +18,10 @@ namespace TSODD.Forms
     {
         public int _type;
         public Dictionary<ObjectId, string> _dictionary;
-        ObservableCollection<string> signsTypeList = new ObservableCollection<string> ();
-        ObservableCollection<string> signsExistenceList = new ObservableCollection<string> ();
-        ObservableCollection<string> marksMaterialList = new ObservableCollection<string> ();
-        ObservableCollection<string> marksExistenceList = new ObservableCollection<string> ();
+        ObservableCollection<string> signsTypeList = new ObservableCollection<string>();
+        ObservableCollection<string> signsExistenceList = new ObservableCollection<string>();
+        ObservableCollection<string> marksMaterialList = new ObservableCollection<string>();
+        ObservableCollection<string> marksExistenceList = new ObservableCollection<string>();
 
         private bool _isLoaded = false;
 
@@ -51,7 +39,7 @@ namespace TSODD.Forms
             this.Closed += SelectionForm_Closed;
 
             RebuildForm(_type, _dictionary);
-            
+
             // считаем позицию
             System.Drawing.Point cursorPos = System.Windows.Forms.Cursor.Position;
             this.Left = cursorPos.X - 350;
@@ -106,11 +94,11 @@ namespace TSODD.Forms
                     tb_marksExistence.Visibility = System.Windows.Visibility.Collapsed;
                     this.Height = 100;
                 }
-   
+
                 List<ObjectId> signsListId = _dictionary.Select(s => s.Key).ToList();
                 var signsType = GetAttrValues(signsListId, "TYPESIZE");
                 var signsExistence = GetAttrValues(signsListId, "SIGNEXISTENCE");
-                
+
                 // формируем начальный список комбобокс
                 signsTypeList.Clear();
                 signsTypeList.Add("I"); signsTypeList.Add("II"); signsTypeList.Add("III"); signsTypeList.Add("IV");
@@ -124,7 +112,7 @@ namespace TSODD.Forms
                 {
                     if (!signsTypeList.Contains(selectedType)) signsTypeList.Add(selectedType);
                 }
-                if (!signsTypeList.Contains("другое...")) signsTypeList.Add("другое..."); 
+                if (!signsTypeList.Contains("другое...")) signsTypeList.Add("другое...");
 
                 foreach (var selectedExistence in signsExistence)
                 {
@@ -164,7 +152,7 @@ namespace TSODD.Forms
                 List<ObjectId> signsListId = _dictionary.Select(s => s.Key).ToList();
                 var marksMaterial = GetAttrValues(signsListId, "MATERIAL");
                 var marksExistence = GetAttrValues(signsListId, "MARKEXISTENCE");
-                
+
                 // формируем начальный список комбобокс
                 marksMaterialList.Clear();
                 marksMaterialList.Add("Холодный пластик"); marksMaterialList.Add("Термопластик"); marksMaterialList.Add("Краска");
@@ -173,7 +161,7 @@ namespace TSODD.Forms
                 marksExistenceList.Clear();
                 marksExistenceList.Add("Нанести"); marksExistenceList.Add("Демаркировать");
 
-            
+
                 // добавляем в список  новые элементы, если такие есть
                 foreach (var selectedMaterial in marksMaterial)
                 {
@@ -215,7 +203,7 @@ namespace TSODD.Forms
             {
                 foreach (var id in listId)
                 {
-                    if (!id.IsValid) continue; 
+                    if (!id.IsValid) continue;
 
                     DBObject dbo = (DBObject)tr.GetObject(id, OpenMode.ForRead);
                     if (dbo is BlockReference br)
@@ -235,8 +223,8 @@ namespace TSODD.Forms
                     {
                         TsoddXdataElement txde = new TsoddXdataElement();
                         txde.Parse(id);
-                        if (attrName == "MATERIAL") { result.Add(txde.Material);}
-                        if (attrName == "MARKEXISTENCE") { result.Add(txde.Existence);}
+                        if (attrName == "MATERIAL") { result.Add(txde.Material); }
+                        if (attrName == "MARKEXISTENCE") { result.Add(txde.Existence); }
                     }
                 }
             }
@@ -251,8 +239,8 @@ namespace TSODD.Forms
 
             if (!_isLoaded) return; // форма еще не загрузилась
             if (cb_signsType.SelectedIndex == -1) return;   // ничего не выбрано
-            if (cb_signsType.SelectedIndex == cb_signsType.Items.Count - 1) 
-            
+            if (cb_signsType.SelectedIndex == cb_signsType.Items.Count - 1)
+
             {  // выбран последний эдемент
                 this.Hide();
                 value = PromptForNotDefaultValue("Введите типоразмер знака");
@@ -269,7 +257,7 @@ namespace TSODD.Forms
                     RebuildForm(_type, _dictionary);
                 }
                 return;        // выбрано пустое значение 
-            } 
+            }
             ApplyAttributeValue(value, "TYPESIZE", "SIGN");
             RebuildForm(_type, _dictionary);
         }
@@ -380,12 +368,12 @@ namespace TSODD.Forms
 
 
         private void ApplyAttributeValue(string value, string attributeTag, string blockName)
-        { 
+        {
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
 
             // отбираем только нужные типы (знак или разметка)
-            var separatedList = _dictionary.Where(i=>i.Value == blockName).ToList();
+            var separatedList = _dictionary.Where(i => i.Value == blockName).ToList();
 
             using (doc.LockDocument())
             using (var tr = db.TransactionManager.StartTransaction())
@@ -408,7 +396,7 @@ namespace TSODD.Forms
                     }
                 }
                 tr.Commit();
-            } 
+            }
         }
 
         private string PromptForNotDefaultValue(string txt)

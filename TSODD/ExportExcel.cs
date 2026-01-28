@@ -1,22 +1,12 @@
 ﻿
-using System.Collections.Generic;
-using System.IO;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Windows.Documents;
-using Autodesk.AutoCAD.Interop;
 using OfficeOpenXml;
 using OfficeOpenXml.Style;
-using TSODD.Properties;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Windows.Forms;
 using ACAD = Autodesk.AutoCAD.ApplicationServices;
-using System.Runtime.Remoting.Messaging;
-using System;
-using System.Linq;
-using System.Runtime.InteropServices.ComTypes;
-using Autodesk.AutoCAD.DatabaseServices;
-using System.Data.Common;
 
 namespace TSODD
 {
@@ -43,7 +33,7 @@ namespace TSODD
                 DefaultExt = "xlsx",
                 FileName = exportFileName
             };
-      
+
             // показываем окно
             if (saveFileDialog.ShowDialog() == DialogResult.OK)
             {
@@ -61,9 +51,9 @@ namespace TSODD
                         MessageBox.Show("Ошибка сохранения ведомости. Файл открыт.");
                         return;
                     }
-                    finally 
+                    finally
                     {
-                       if(fs != null) fs.Dispose();
+                        if (fs != null) fs.Dispose();
                     }
                 }
 
@@ -106,7 +96,7 @@ namespace TSODD
                     }
 
                     // оформление границ таблицы
-                    if (currentRow>1) TableBorders(ws,2, 1, currentRow, 10);
+                    if (currentRow > 1) TableBorders(ws, 2, 1, currentRow, 10);
 
                     // сохранение файла
                     package.SaveAs(new FileInfo(filePath));
@@ -176,7 +166,7 @@ namespace TSODD
 
                     // сортировка разметки по Осям
                     var markListGroups = markList.GroupBy(g => g.AxisName).ToList();
-                   
+
                     foreach (var group in markListGroups)
                     {
                         // сортировка по расстоянию
@@ -212,20 +202,20 @@ namespace TSODD
                 char mergeOrientation = ' ';
                 int mergeCellsCount = 0;
 
-                    try
-                    {
-                       name = headerData[0];
-                       row = Int16.Parse(headerData[1]);
-                       col = Int16.Parse(headerData[2]);
-                       mergeOrientation = Char.Parse(headerData[3]);
-                       if(headerData.Count()>4) mergeCellsCount = Int16.Parse(headerData[4]);
+                try
+                {
+                    name = headerData[0];
+                    row = Int16.Parse(headerData[1]);
+                    col = Int16.Parse(headerData[2]);
+                    mergeOrientation = Char.Parse(headerData[3]);
+                    if (headerData.Count() > 4) mergeCellsCount = Int16.Parse(headerData[4]);
 
-                    }
-                    catch
-                    {
-                        MessageBox.Show("Ошибка настройки шапки таблицы");
-                        return;
-                    }
+                }
+                catch
+                {
+                    MessageBox.Show("Ошибка настройки шапки таблицы");
+                    return;
+                }
 
                 // настраиваем столбец
                 var cell = worksheet.Cells[row, col];
@@ -247,8 +237,8 @@ namespace TSODD
                     else    // если горизонтальное объединение 
                     {
                         cell = worksheet.Cells[row, col, row, col + mergeCellsCount - 1];
-                        worksheet.Cells[row, col, row, col + mergeCellsCount-1].Merge = true;
-                    } 
+                        worksheet.Cells[row, col, row, col + mergeCellsCount - 1].Merge = true;
+                    }
                 }
 
                 // наименование столбца
@@ -271,7 +261,7 @@ namespace TSODD
         private void AddSignDataToTable(ExcelWorksheet worksheet, Stand stand, Sign sign, ref int currentRow)
         {
             currentRow += 1;
-            
+
             AddTextToCell(currentRow, 1, (currentRow - 1).ToString()); //#
             AddTextToCell(currentRow, 2, stand.AxisName);
             AddTextToCell(currentRow, 3, sign.Number);
@@ -323,7 +313,7 @@ namespace TSODD
             }
         }
 
-        private void  TableBorders(ExcelWorksheet worksheet, int startRow, int startColumn, int endRow, int endColumn)
+        private void TableBorders(ExcelWorksheet worksheet, int startRow, int startColumn, int endRow, int endColumn)
         {
             ExcelRange cell;
             cell = worksheet.Cells[startRow, startColumn, endRow, endColumn];
