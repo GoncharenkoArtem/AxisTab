@@ -428,7 +428,7 @@ namespace TSODD
         // метод обновляет типы линии в автокаде
         public static void RefreshLineTypesInAcad()
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
 
             // список всех типов линий (кастомных конечно)
@@ -490,7 +490,7 @@ namespace TSODD
 
         public static bool DeleteLineTypeFromAcad(string name)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             using (doc.LockDocument())
 
@@ -570,7 +570,7 @@ namespace TSODD
 
         public static ObjectId[] CollectMarkLineTypeID(bool onlyMaster)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 

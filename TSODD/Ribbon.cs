@@ -167,7 +167,7 @@ namespace TSODD
 
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("NEW_AXIS ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("NEW_AXIS ", true, false, false);
                 })
             };
             panelSourceAxis.Items.Add(bt_newAxis);
@@ -194,7 +194,7 @@ namespace TSODD
                 Image = LoadImage("pack://application:,,,/TSODD;component/images/axis_name.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("SET_AXIS_NAME ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("SET_AXIS_NAME ", true, false, false);
                 })
             };
 
@@ -210,7 +210,7 @@ namespace TSODD
                 Image = LoadImage("pack://application:,,,/TSODD;component/images/axis_startPoint.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("SET_AXIS_START_POINT ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("SET_AXIS_START_POINT ", true, false, false);
                 })
             };
 
@@ -237,7 +237,7 @@ namespace TSODD
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/axis_setPK.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("SET_PK ", true, false, false); 
+                    TsoddHost.Current.doc?.SendStringToExecute("SET_PK ", true, false, false); 
                 })
             };
 
@@ -251,7 +251,7 @@ namespace TSODD
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/axis_getPK.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("GET_PK ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("GET_PK ", true, false, false);
                 })
             };
 
@@ -284,7 +284,7 @@ namespace TSODD
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/stand_bindToAxis.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("BIND_TO_AXIS ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("BIND_TO_AXIS ", true, false, false);
 
                 })
             };
@@ -315,7 +315,7 @@ namespace TSODD
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/block_insert.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("INSERT_TSODD_BLOCK ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("INSERT_TSODD_BLOCK ", true, false, false);
                 })
             };
             panelSourceBlocks.Items.Add(insertBlock);
@@ -330,7 +330,7 @@ namespace TSODD
                 LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/block_user.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("USER_MARK_BLOCK ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("USER_MARK_BLOCK ", true, false, false);
                 })
             };
             panelSourceBlocks.Items.Add(userBlock);
@@ -411,7 +411,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("MARK_LINE_INVERT ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("MARK_LINE_INVERT ", true, false, false);
                 })
             };
             panelSourceMarks.Items.Add(bt_invertLineType);
@@ -427,7 +427,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("MARK_LINE_TEXT_INVERT ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("MARK_LINE_TEXT_INVERT ", true, false, false);
                 })
             };
             panelSourceMarks.Items.Add(bt_invertTextPosition);
@@ -456,7 +456,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("OPTIONS_TSODD ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("OPTIONS_TSODD ", true, false, false);
                 })
             };
             panelSourceOptions.Items.Add(bt_options);
@@ -471,7 +471,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("LOAD_BLOCK_TO_DB ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("LOAD_BLOCK_TO_DB ", true, false, false);
                 })
             };
             panelSourceOptions.Items.Add(bt_addBlockToBD);
@@ -486,7 +486,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("LOAD_MARK_LINE_TO_DB ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("LOAD_MARK_LINE_TO_DB ", true, false, false);
                 })
             };
             panelSourceOptions.Items.Add(bt_addLineTypeToBD);
@@ -502,7 +502,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("GROUPS_TSODD ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("GROUPS_TSODD ", true, false, false);
                 })
             };
             panelSourceOptions.Items.Add(bt_addGroups);
@@ -532,7 +532,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("SELECT_TSODD_OBJECTS ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("SELECT_TSODD_OBJECTS ", true, false, false);
                 })
             };
             panelSourceSelection.Items.Add(bt_quickSelection);
@@ -547,7 +547,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("MULTILEADER_TSODD ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("MULTILEADER_TSODD ", true, false, false);
                 })
             };
             panelSourceSelection.Items.Add(bt_mleader);
@@ -560,7 +560,7 @@ namespace TSODD
             quickProperties.Size = RibbonItemSize.Large;
             quickProperties.CommandHandler = new RelayCommandHandler(() =>
             {
-                doc?.SendStringToExecute("QUICK_PROPERTIES_TSODD_ON/OFF ", true, false, false);
+                TsoddHost.Current.doc?.SendStringToExecute("QUICK_PROPERTIES_TSODD_ON/OFF ", true, false, false);
             });
             panelSourceSelection.Items.Add(quickProperties);
 
@@ -589,7 +589,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("EXPORT_SIGNS ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("EXPORT_SIGNS ", true, false, false);
                 })
             };
 
@@ -604,7 +604,7 @@ namespace TSODD
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    doc?.SendStringToExecute("EXPORT_МАRKS ", true, false, false);
+                    TsoddHost.Current.doc?.SendStringToExecute("EXPORT_МАRKS ", true, false, false);
                 })
             };
 

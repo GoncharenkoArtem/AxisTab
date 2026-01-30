@@ -91,7 +91,7 @@ namespace TSODD.forms
         {
             InitializeComponent();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var locationX = doc.Window.DeviceIndependentLocation.X;
             var screenWidth = SystemParameters.PrimaryScreenWidth;
 
@@ -128,7 +128,7 @@ namespace TSODD.forms
             var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "INSERT" }, true);
             if (listElementsID == null || listElementsID.Count != 1) return;
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -191,6 +191,10 @@ namespace TSODD.forms
                                 dataGridValues.Add(value);
                                 dublicateValues.Add(attr.Tag);
                             }
+                            else
+                            {
+                                invisibleObjects.Add(ent.Id);
+                            }
                         }
 
                         string txt = string.Empty;
@@ -251,7 +255,7 @@ namespace TSODD.forms
 
             RibbonInitializer.Instance.readyToDeleteEntity = false; // запрещаем анализировать объекты при удалении
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -262,6 +266,9 @@ namespace TSODD.forms
 
                     ObjectIdCollection idsToClone;
                     DataGridValue match;
+                    // для отслеживания дубликатов
+                    HashSet<string> dublicateValues = new HashSet<string>();
+
 
                     // словарь для значений атрибутов
                     Dictionary<string, string> brValues = new Dictionary<string, string>();
@@ -319,7 +326,7 @@ namespace TSODD.forms
                             case "ATTDEF":      // Атрибут
 
                                 var ad = ent as AttributeDefinition;
-                                if (ad.Visible == false) continue;
+                                if (ad.Invisible == true) continue;
 
                                 match = collection.FirstOrDefault(a => a.Name.Equals(ad.Tag.ToString(), StringComparison.OrdinalIgnoreCase));
                                 if (match == null)
@@ -328,7 +335,9 @@ namespace TSODD.forms
                                 }
                                 else
                                 {
+                                    if (dublicateValues.Contains(ad.Tag.ToString())) continue;
                                     if (match.Value == false) continue;
+                                    dublicateValues.Add(ad.Tag.ToString());
                                 }
                                 break;
                         }
@@ -349,7 +358,6 @@ namespace TSODD.forms
                     var tempBtr = new BlockTableRecord();
                     tempBtr.Name = "tempBlockForPreviewIcon"; // анонимное имя, чтобы не конфликтовать
 
-
                     ObjectId tempBtrId = bt.Add(tempBtr);
                     tr.AddNewlyCreatedDBObject(tempBtr, true);
 
@@ -359,15 +367,18 @@ namespace TSODD.forms
                     // настроим атрибуты для snapshot
                     foreach (var id in tempBtr)
                     {
-                        Entity ent = (Entity)tr.GetObject(id, OpenMode.ForRead);
+                        Entity ent = (Entity)tr.GetObject(id, OpenMode.ForWrite);
                         if (ent is AttributeDefinition attr)
                         {
                             if (brValues.TryGetValue(attr.Tag, out string value))
                             {
-                                ent.UpgradeOpen();
-                                attr.TextString = value;
-                                attr.AdjustAlignment(db);
+                                attr.TextString = value; 
                             }
+                            else
+                            {
+                                attr.TextString = attr.Tag.ToString();
+                            }
+                            attr.AdjustAlignment(db);
                         }
                     }
 
@@ -413,7 +424,9 @@ namespace TSODD.forms
             if (lv_item != null)
             {
                 string signNum = tb_blockName.Text.Trim();
-                if (signNum.Contains('_')) signNum = signNum.Split('_')[0].Trim();
+                HashSet<char> delimetr = new HashSet<char> { '-', '_' };
+                char hasDelimetr = signNum.FirstOrDefault(d => delimetr.Contains(d));
+                if (hasDelimetr != 0) signNum = signNum.Split(hasDelimetr)[0].Trim();
 
                 // если выбран знак 
                 if (rb_Sign.IsChecked == true && lv_item.Name == signNum && (bool)ch.IsChecked)
@@ -433,8 +446,12 @@ namespace TSODD.forms
         private void rb_Stand_Checked(object sender, RoutedEventArgs e)
         {
             chb_singleSign.Visibility = System.Windows.Visibility.Collapsed;
+            stp_signNameStackPanel.Visibility = System.Windows.Visibility.Collapsed;
             tb_signName.Visibility = System.Windows.Visibility.Collapsed;
             tb_signName.IsEnabled = false;
+
+            chb_marksSquare.Visibility = System.Windows.Visibility.Collapsed;
+            stp_marksStackPanel.Visibility=System.Windows.Visibility.Collapsed;
 
             // настраиваем группу
             cb_Groups.ItemsSource = null;
@@ -447,9 +464,12 @@ namespace TSODD.forms
         {
             chb_singleSign.Visibility = System.Windows.Visibility.Visible;
             chb_singleSign.IsChecked = true;
+            stp_signNameStackPanel.Visibility = System.Windows.Visibility.Visible;
             tb_signName.Visibility = System.Windows.Visibility.Visible;
+            tb_signName.IsEnabled = true;
 
-            tb_signName.Visibility = System.Windows.Visibility.Visible;
+            chb_marksSquare.Visibility = System.Windows.Visibility.Collapsed;
+            stp_marksStackPanel.Visibility = System.Windows.Visibility.Collapsed;
 
             // заполняем имя знака
             FillSignName();
@@ -479,8 +499,12 @@ namespace TSODD.forms
         private void rb_Mark_Checked(object sender, RoutedEventArgs e)
         {
             chb_singleSign.Visibility = System.Windows.Visibility.Collapsed;
+            stp_signNameStackPanel.Visibility = System.Windows.Visibility.Collapsed;
             tb_signName.Visibility = System.Windows.Visibility.Collapsed;
             tb_signName.IsEnabled = false;
+
+            chb_marksSquare.Visibility = System.Windows.Visibility.Visible;
+            stp_marksStackPanel.Visibility = System.Windows.Visibility.Visible;
 
             // настраиваем группу
             gr_Groups.IsEnabled = true;
@@ -578,6 +602,12 @@ namespace TSODD.forms
         private void bt_Ok_Click(object sender, RoutedEventArgs e)
         {
 
+            if (_btr == null)
+            {
+                MessageBox.Show("Ошибка. Не выбран блок");
+                return;
+            }
+
             string template = string.Empty;
             if ((bool)rb_Stand.IsChecked) template = "STAND_TEMPLATE";
             if ((bool)rb_Sign.IsChecked) template = "SIGN_TEMPLATE";
@@ -602,6 +632,7 @@ namespace TSODD.forms
             }
 
             // проверка на то, что объект имеет нужные атрибуты для ПК
+            double markSquare = -1;
             if ((bool)rb_Mark.IsChecked)
             {
                 bool match = dataGridValues.Any(v => v.Name.Contains("PK_VAL"));
@@ -610,6 +641,18 @@ namespace TSODD.forms
                     MessageBox.Show("Ошибка загрузки блока разметки. Блок должен иметь хотябы один атрибут с наименованием \"PK_VAL...\". " +
                                     "\n Пример:\"PK_VAL_1\" или \"PK_VAL_LEFT\".\n Так же, желательно, сделать данные атрибуты скрытыми.");
                     return;
+                }
+
+
+                if (!(bool)chb_marksSquare.IsChecked) 
+                {
+                    // пробуем считать площадь
+                    if (!double.TryParse(tb_marksSquare.Text, out markSquare))
+                    {
+                        MessageBox.Show("Ошибка загрузки блока разметки. Некорректно указана площадь");
+                        return;
+                    }
+                
                 }
             }
 
@@ -623,9 +666,10 @@ namespace TSODD.forms
                 return;
             }
 
+
             // добавляем блок в БД
             TsoddBlock.AddBlockToBD(template, _btr, blockName, blockNumber, dataGridValues, invisibleObjects,
-                                    _extents, _bmpBlockIcon, (bool)chb_singleSign.IsChecked, cb_Groups.SelectedValue?.ToString() ?? "");
+                                    _extents, _bmpBlockIcon, (bool)chb_singleSign.IsChecked, cb_Groups.SelectedValue?.ToString() ?? "", markSquare);
 
             // заполняем список стоек 
             if ((bool)rb_Stand.IsChecked) RibbonInitializer.Instance.FillBlocksMenu(RibbonInitializer.Instance.splitStands, "STAND", blockName);
@@ -653,7 +697,7 @@ namespace TSODD.forms
             GroupsAddForm groupsAddForm = new GroupsAddForm();
             groupsAddForm.ShowDialog();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var locationX = doc.Window.DeviceIndependentLocation.X;
             var screenWidth = SystemParameters.PrimaryScreenWidth;
 
@@ -679,6 +723,17 @@ namespace TSODD.forms
                 }
             }
         }
+
+        private void chb_marksSquare_Checked(object sender, RoutedEventArgs e)
+        {
+            CheckBox chb = sender as CheckBox;
+            bool isChecked = (bool)chb.IsChecked;
+
+            stp_marksStackPanel.IsEnabled = isChecked? false : true;
+        }
+
+   
+
 
 
     }

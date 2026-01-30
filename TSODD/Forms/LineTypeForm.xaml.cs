@@ -36,7 +36,7 @@ namespace TSODD.forms
         {
             InitializeComponent();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var locationX = doc.Window.DeviceIndependentLocation.X;
             var screenWidth = SystemParameters.PrimaryScreenWidth;
 

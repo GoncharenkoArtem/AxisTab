@@ -90,7 +90,7 @@ namespace TSODD
                     }
 
                     // добавляем аннатотивность в атрибут
-                    if (!ar.Invisible)
+                    if (!ar.Invisible && ar.Tag.Equals("НОМЕР_ЗНАКА"))
                     {
                         // пользовательские настройки
                         var userOptions = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath);
@@ -118,6 +118,7 @@ namespace TSODD
                         }
                     }
 
+
                     br.AttributeCollection.AppendAttribute(ar);
                     tr.AddNewlyCreatedDBObject(ar, true);
 
@@ -135,13 +136,14 @@ namespace TSODD
                 ed.WriteMessage("\n Не получилось заполнить следующие атрибуты блока: \n " + att);
                 return;
             }
+
         }
 
 
         // метод импортирования блоков с шаблона с настройками атрибутов
         private static void InsertBlockByNameWithTags(Point3d insertPoint, string name, Dictionary<string, string> tags)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -314,7 +316,7 @@ namespace TSODD
             if (blockInsertFlag == false) return;
             blockInsertFlag = false;  // переменная для отслеживанияч двойного нажатия кнопки
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -358,7 +360,7 @@ namespace TSODD
         // метод вставки блока знака
         public static void InsertSignBlock(string name)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -534,7 +536,7 @@ namespace TSODD
         // метод загрузки блока в базу
         public static void AddBlockToBD(string templateName, BlockTableRecord intBtr, string intBlockName, string intBlockNumber,
             ObservableCollection<DataGridValue> collection, List<ObjectId> deleteObjects,
-            Extents3d extents, Bitmap blockIcon, bool singleSign, string groupName)
+            Extents3d extents, Bitmap blockIcon, bool singleSign, string groupName, double markSquare)
         {
             RibbonInitializer.Instance.readyToDeleteEntity = false; // запрещаем анализировать объекты при удалении
 
@@ -770,7 +772,10 @@ namespace TSODD
                                     {
                                         ad.TextString = intBlockNumber; // номер разметки
                                     }
-
+                                    if (ad.Tag.Equals("SQUARE", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        ad.TextString = markSquare.ToString(); // площадь
+                                    }
                                 }
                                 tr.Commit();
                             }
@@ -1184,7 +1189,7 @@ namespace TSODD
 
         public static void CreateUserMarkBlock()
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -1569,7 +1574,7 @@ namespace TSODD
                 AddAttributeToBlock(btr, tr, tag: "DOUBLED", prompt: "Два знака на одной стойке", defaultValue: "false", Point3d.Origin, 3);
                 AddAttributeToBlock(btr, tr, tag: "НОМЕР_ЗНАКА", prompt: "Номер знака", defaultValue: "", Point3d.Origin, 4, 2.5, true, false, false);
                 AddAttributeToBlock(btr, tr, tag: "TYPESIZE", prompt: "Типоразмер", defaultValue: "I", Point3d.Origin, 3);
-                AddAttributeToBlock(btr, tr, tag: "SIGNEXISTENCE", prompt: "Наличие", defaultValue: "Необходимо установить", Point3d.Origin, 4);
+                AddAttributeToBlock(btr, tr, tag: "SIGNEXISTENCE", prompt: "Наличие", defaultValue: "Установить", Point3d.Origin, 4);
                 tr.Commit();
             }
         }
@@ -1598,9 +1603,10 @@ namespace TSODD
                 AddAttributeToBlock(btr, tr, tag: "MARK", prompt: "Тег для идентификации ", defaultValue: "", Point3d.Origin, 0);
                 AddAttributeToBlock(btr, tr, tag: "ОСЬ", prompt: "Тег привязки стойки к оси", defaultValue: "", Point3d.Origin, 1, 2.5, true);
                 AddAttributeToBlock(btr, tr, tag: "NUMBER", prompt: "Номер", defaultValue: "", Point3d.Origin, 2);
-                AddAttributeToBlock(btr, tr, tag: "GROUP", prompt: "Группа", defaultValue: "", Point3d.Origin, 3);
-                AddAttributeToBlock(btr, tr, tag: "MATERIAL", prompt: "Материал", defaultValue: "Термопластик", Point3d.Origin, 4);
-                AddAttributeToBlock(btr, tr, tag: "MARKEXISTENCE", prompt: "Наличие", defaultValue: "Требуется нанести", Point3d.Origin, 5);
+                AddAttributeToBlock(btr, tr, tag: "SQUARE", prompt: "Площадь", defaultValue: "", Point3d.Origin, 3);
+                AddAttributeToBlock(btr, tr, tag: "GROUP", prompt: "Группа", defaultValue: "", Point3d.Origin, 4);
+                AddAttributeToBlock(btr, tr, tag: "MATERIAL", prompt: "Материал", defaultValue: "Термопластик", Point3d.Origin, 5);
+                AddAttributeToBlock(btr, tr, tag: "MARKEXISTENCE", prompt: "Наличие", defaultValue: "Нанести", Point3d.Origin, 6);
 
                 tr.Commit();
             }
@@ -1848,6 +1854,12 @@ namespace TSODD
                                                 mark.Number = ar.TextString;
                                                 break;
 
+                                            case var a when a.Equals("SQUARE", StringComparison.OrdinalIgnoreCase):
+                                                double square = -1;
+                                                double.TryParse(ar.TextString, out square);
+                                                mark.Square = square;
+                                                break;
+
                                             case var a when a.Equals("MARKEXISTENCE", StringComparison.OrdinalIgnoreCase):
                                                 switch (ar.TextString)
                                                 {
@@ -1967,8 +1979,12 @@ namespace TSODD
                 }
             }
 
-            // считаем площадь разметки
-            mark.Square = Math.Round(GetHatchSquare(tr, db, bref), 1);
+            if (mark.Square == -1)  // если необходимо считать площадь исходя из геометрии блока
+            {
+                // считаем площадь разметки
+                mark.Square = Math.Round(GetHatchSquare(tr, db, bref), 1);
+            }
+
 
             // записываем значения начала и конца ПК
             if (PK.TryGetValue(minPkDistance, out string minPkVal)) mark.PK_start = minPkVal;
@@ -2043,7 +2059,7 @@ namespace TSODD
         {
             List<Mark> result = new List<Mark>();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 

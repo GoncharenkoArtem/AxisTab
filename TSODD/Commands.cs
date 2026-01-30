@@ -133,6 +133,8 @@ public static class TsoddCommands
     {
         OptionsForm optionsForm = new OptionsForm();
         optionsForm.ShowDialog();
+
+        TsoddBlock.BuildTemplateDWG();
     }
 
     [CommandMethod("LOAD_BLOCK_TO_DB")]

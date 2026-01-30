@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TSODD.forms"
         mc:Ignorable="d"
-        Title="Загрузка блока в БД" Height="365" Width="400" ResizeMode="NoResize">
+        Title="Загрузка блока в БД" Height="365" Width="452" ResizeMode="NoResize">
     <Grid>
 
         <Grid.RowDefinitions>
@@ -16,8 +16,8 @@
         </Grid.RowDefinitions>
 
         <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="170" ></ColumnDefinition>
-            <ColumnDefinition Width="210" ></ColumnDefinition>
+            <ColumnDefinition Width="200" ></ColumnDefinition>
+            <ColumnDefinition Width="230" ></ColumnDefinition>
         </Grid.ColumnDefinitions>
 
         <GroupBox Header="Тип блока" Grid.Row="0" Grid.Column="0" Margin="3">
@@ -31,16 +31,14 @@
 
         <GroupBox x:Name="gr_Groups" Header="Группа" Grid.Row="1" Grid.Column="0" Margin="3">
            <StackPanel Orientation="Horizontal">
-                <ComboBox x:Name="cb_Groups" Width="125"></ComboBox>
+                <ComboBox x:Name="cb_Groups" Width="155"></ComboBox>
                 <Button x:Name ="bt_addGroup" Width="20" Margin="5,0,0,0" Click="bt_addGroup_Click"  Background="Transparent" BorderBrush="Transparent">
                     <Image Source="pack://application:,,,/TSODD;component/images/plus.png" ></Image >
                 </Button>
            </StackPanel>
         </GroupBox>
         
-        
-
-        <Button x:Name="bt_blockSelector" Grid.Row="4" Grid.Column="0" Content="Выбрать блок в модели" Height="20" Margin="15,10,15,0" Click="bt_blockSelector_Click"/>
+        <Button x:Name="bt_blockSelector" Grid.Row="4" Grid.Column="0" Content="Выбрать блок в модели" Height="20" Margin="10,10,10,0" Click="bt_blockSelector_Click"/>
 
         <Image x:Name="im_blockImage" Grid.Row="2" Width="140" Height="140" />
 
@@ -53,14 +51,23 @@
 
             <StackPanel Grid.Row="0" Grid.Column="0" Orientation="Horizontal">
                 <Label Content="Имя блока:"></Label>
-                <TextBox x:Name="tb_blockName" Height="22" Width="138" TextChanged="tb_blockName_TextChanged"></TextBox>
+                <TextBox x:Name="tb_blockName" Height="22" Width="158" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" TextChanged="tb_blockName_TextChanged"></TextBox>
             </StackPanel>
 
             <CheckBox x:Name="chb_singleSign"  Grid.Row="1" Grid.Column="0" Content="Состоит из одного знака" Margin="5,2,0,0" Checked="chb_singleSign_Checked" Unchecked="chb_singleSign_Checked"></CheckBox>
 
-            <StackPanel Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">
+            <CheckBox x:Name="chb_marksSquare"  Grid.Row="1" Grid.Column="0" Content="Высчитывать площадь из геометрии" Margin="5,5,4,0" Checked="chb_marksSquare_Checked"  Unchecked="chb_marksSquare_Checked"></CheckBox>
+
+   
+            <StackPanel x:Name="stp_marksStackPanel"  Grid.Row="2" Grid.Column="0" Orientation="Horizontal">
+                <Label Content="Фиксированая площадь м2:" VerticalAlignment="Center"></Label>
+                <TextBox x:Name="tb_marksSquare" Height="22" Width="67" VerticalContentAlignment="Center" HorizontalContentAlignment="Center" ></TextBox>
+            </StackPanel>
+
+
+            <StackPanel x:Name="stp_signNameStackPanel" Grid.Row="2" Grid.Column="0" VerticalAlignment="Center">
                 <TextBox x:Name="tb_signName"
-                     Width="205"
+                     Width="225"
                      TextWrapping="WrapWithOverflow"
                      MinHeight="22"
                      MaxHeight="40"
@@ -68,6 +75,7 @@
                      Margin="5,0,0,0">
                 </TextBox>
             </StackPanel>
+            
         </Grid>   
 
         <Label Content="Оставить элементы:" Grid.Row="1" Grid.Column="1" VerticalContentAlignment="Center"></Label>
@@ -142,8 +150,8 @@
         </DataGrid>
 
         <StackPanel Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2" Orientation="Horizontal" Margin="0,10,0,0" HorizontalAlignment="Right">
-            <Button x:Name="bt_Cancel" Content="Выход" Width="100" Height="20" Margin="0,0,10,0" Click="bt_Cancel_Click"></Button>
-            <Button x:Name="bt_Ok" Content="Добавить" Width="100"  Height="20" Click="bt_Ok_Click"></Button>
+            <Button x:Name="bt_Cancel" Content="Выход" Width="110" Height="20" Margin="0,0,10,0" Click="bt_Cancel_Click"></Button>
+            <Button x:Name="bt_Ok" Content="Добавить" Width="110"  Height="20" Click="bt_Ok_Click"></Button>
         </StackPanel>
 
 

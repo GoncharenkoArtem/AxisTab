@@ -17,7 +17,7 @@ namespace TSODD.Forms
         {
             InitializeComponent();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var locationX = doc.Window.DeviceIndependentLocation.X;
             var screenWidth = SystemParameters.PrimaryScreenWidth;
 
@@ -63,7 +63,7 @@ namespace TSODD.Forms
 
         private void Button_Click(object sender, RoutedEventArgs e)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -224,7 +224,7 @@ namespace TSODD.Forms
 
         private void SelectAllAxis()
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -257,7 +257,7 @@ namespace TSODD.Forms
 
         //private Axis SelectAxis()
         //{
-        //    var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+        //    var doc = TsoddHost.Current.doc;
         //    var db = doc.Database;
         //    var ed = doc.Editor;
 
@@ -282,7 +282,7 @@ namespace TSODD.Forms
 
         //private ObjectId[] SelectMarkLineType(bool onlyMaster)
         //{
-        //    var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+        //    var doc = TsoddHost.Current.doc;
         //    var db = doc.Database;
         //    var ed = doc.Editor;
 
@@ -327,7 +327,7 @@ namespace TSODD.Forms
 
         private void SelectObjects(ObjectId[] ids)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 

@@ -195,7 +195,7 @@ namespace TSODD.Forms
 
         private HashSet<string> GetAttrValues(List<ObjectId> listId, string attrName)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
 
             HashSet<string> result = new HashSet<string>();
@@ -369,7 +369,7 @@ namespace TSODD.Forms
 
         private void ApplyAttributeValue(string value, string attributeTag, string blockName)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
 
             // отбираем только нужные типы (знак или разметка)

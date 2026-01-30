@@ -47,6 +47,7 @@ namespace TSODD
         {
             if (!quickPropertiesOn) return; // если отключено окно с бысрыми свойствами
 
+
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
@@ -277,7 +278,7 @@ namespace TSODD
         public Axis SelectAxis()
         {
             Axis resultAxis = null;
-            var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var ed = doc.Editor;
 
             // Настройки промпта
@@ -808,7 +809,7 @@ namespace TSODD
         /// <param name="listId" список ObjectId элементов></param>
         private void DeleteSlaveObjectsFromList(ref List<ObjectId> listId)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -846,7 +847,7 @@ namespace TSODD
         /// <param name="polyline_2" результирующая полилиния 2 ></param>
         private void PolylineTo2Polylines(ObjectId id, double offset, ref Autodesk.AutoCAD.DatabaseServices.Polyline polyline_1, ref Autodesk.AutoCAD.DatabaseServices.Polyline polyline_2)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
             using (doc.LockDocument())
@@ -913,7 +914,7 @@ namespace TSODD
         /// <param name="id" ID идентификатор выбранной полилинии></param>
         public static void MLineTypeToPolyline(ObjectId id, out ObjectId outId)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -1015,7 +1016,7 @@ namespace TSODD
 
             HashSet<ObjectId> listOfReverseObjects = new HashSet<ObjectId>();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -1080,7 +1081,7 @@ namespace TSODD
 
             HashSet<ObjectId> listOfReverseObjects = new HashSet<ObjectId>();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -1184,7 +1185,7 @@ namespace TSODD
         /// <returns> bool - удачное применение оформления или нет.</returns>
         private bool ApplyLineTypeToEntity(ObjectId id, CurrentLineType lineType)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -1238,7 +1239,7 @@ namespace TSODD
         /// <returns> Возвращает handle, созданного MText </returns>
         private string AddMtextToLineType(ObjectId polylineID, string lineTypeName)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
             // пользовательские настр-йки
@@ -1524,7 +1525,7 @@ namespace TSODD
 
         public List<ObjectId> GetAutoCadSelectionObjectsId(SelectionFilter filter, bool singleSelection = false)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var ed = doc.Editor;
 
             string textMessage = "\n Выберите объекты, можно рамкой выбрать несколько:";
@@ -1704,7 +1705,8 @@ namespace TSODD
                 MText mtext = new MText
                 {
                     Contents = txt,
-                    TextHeight = userOptions.MleaderTextHeight * scale,
+                    TextHeight = userOptions.MleaderTextHeight,
+                    //Height = userOptions.MleaderTextHeight,
                     Location = textPoint,
                     Attachment = AttachmentPoint.MiddleCenter,
                     Annotative = AnnotativeStates.True
@@ -1713,6 +1715,7 @@ namespace TSODD
                 MLeader mleader = new MLeader
                 {
                     MText = mtext,
+                    TextHeight = userOptions.MleaderTextHeight,
                     ContentType = ContentType.MTextContent,
                     ArrowSize = 2,
                     LandingGap = 1.0
@@ -1750,7 +1753,7 @@ namespace TSODD
         /// </summary>
         public void GetPkOnAxis()
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
@@ -1826,7 +1829,7 @@ namespace TSODD
         /// </summary>
         public void SetPkOnAxis()
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 

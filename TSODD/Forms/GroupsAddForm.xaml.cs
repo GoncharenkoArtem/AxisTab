@@ -20,7 +20,7 @@ namespace TSODD.forms
         {
             InitializeComponent();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var locationX = doc.Window.DeviceIndependentLocation.X;
             var screenWidth = SystemParameters.PrimaryScreenWidth;
 
@@ -44,7 +44,7 @@ namespace TSODD.forms
         private void FillGridByGroups()
         {
             _groups.Clear();
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
 
             List<string> groups = new List<string>();

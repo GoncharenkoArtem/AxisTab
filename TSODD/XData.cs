@@ -19,7 +19,7 @@ namespace TSODD
         // метод, гарантирующий регистрацию приложения
         private static void GetAppReg(Transaction tr, Database db)
         {
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
 
             RegAppTable rat = (RegAppTable)tr.GetObject(db.RegAppTableId, OpenMode.ForRead);   // таблица зарегистрированных приложений
             if (!rat.Has(AppName))
@@ -170,7 +170,7 @@ namespace TSODD
             ListXdata = AutocadXData.ReadXData(objectId);
             if (ListXdata.Count == 0) { return; } //  пустая XData
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 

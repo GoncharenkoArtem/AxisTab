@@ -19,9 +19,6 @@ namespace TSODD
 
 
 
-
-
-
         public bool GetAxisStartPoint()
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;

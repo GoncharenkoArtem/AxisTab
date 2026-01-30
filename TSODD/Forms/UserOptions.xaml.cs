@@ -18,7 +18,7 @@ namespace TSODD
         {
             InitializeComponent();
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var locationX = doc.Window.DeviceIndependentLocation.X;
             var screenWidth = SystemParameters.PrimaryScreenWidth;
 
@@ -40,7 +40,7 @@ namespace TSODD
 
             userOptions = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath);
 
-            var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
+            var doc = TsoddHost.Current.doc;
             var db = doc.Database;
             var ed = doc.Editor;
 
