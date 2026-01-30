@@ -1,4 +1,4 @@
-﻿using ACAD_test;
+﻿using TSODD;
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 //using Autodesk.AutoCAD.GraphicsInterface;
@@ -453,7 +453,7 @@ namespace TSODD
                         string name = $"{lt.Name} ({txt_val.Replace(",", "_").Substring(1).TrimStart()})";
 
                         // проверка на сплошную линию
-                        if (listVal.Contains(1000)) name = $"{lt.Name} (continuous)";
+                        if (listVal.Contains(1000)) continue;
 
                         dublicate = tempNameList.Any(n => n == name);
 

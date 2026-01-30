@@ -14,11 +14,8 @@ using TSODD;
 using TSODD.Forms;
 
 
-
-
-
 /* Методы и обработчики для Ribbon */
-namespace ACAD_test
+namespace TSODD
 {
     public partial class RibbonInitializer : IExtensionApplication
     {
@@ -39,12 +36,9 @@ namespace ACAD_test
 
                 e.Document.Editor.PromptForSelectionEnding += Editor_PromptForSelectionEnding;
             }
-
-
             ListOFAxisRebuild(); // перестраиваем combobox с осями
             LineTypeReader.RefreshLineTypesInAcad(); // загружаем типы линии
             TsoddBlock.blockInsertFlag = true; // разрешаем вставку блоков
-
         }
 
 
@@ -399,46 +393,6 @@ namespace ACAD_test
         }
 
 
-
-
-
-
-        //// обработчик события выбора текущей группы знаков
-        //private void SignsGroups_CurrentChanged(object sender, RibbonPropertyChangedEventArgs e)
-        //{
-        //    var curButton = signsGroups.Current as RibbonButton;
-        //    if (curButton == null) return;
-        //    TsoddHost.Current.currentSignGroup = curButton.Text;
-
-        //    // пересобираем список
-        //    splitSigns.Items.Clear();
-        //    FillBlocksMenu(splitSigns, "SIGN", TsoddHost.Current.currentSignGroup);
-
-        //    if (splitSigns.Items.Count > 0)
-        //    {
-        //        splitSigns.Current = splitSigns.Items[0];
-        //    }
-        //    else
-        //    {
-        //        splitSigns.Current = null;
-        //    }
-
-        //}
-
-        //// обработчик события выбора текущего знака
-        //private void SplitSigns_CurrentChanged(object sender, RibbonPropertyChangedEventArgs e)
-        //{
-        //    var curButton = splitSigns.Current as RibbonButton;
-        //    if (curButton == null) return;
-        //    TsoddHost.Current.currentSignBlock = curButton.Text;
-
-        //}
-
-
-
-
-
-
         // метод получает объекты Axis с чертежа
         public static List<Axis> GetListOfAxis()
         {
@@ -562,7 +516,8 @@ namespace ACAD_test
             var patternLabel_1 = comboLineTypePattern_1.Current as RibbonLabel;
             var lineTypePattern_1 = patternLabel_1.Description;
             // имя типа линии в БД Autocad
-            currentLineType_1.Name = $"{firstLineType.Name} {lineTypePattern_1}";
+            if (lineTypePattern_1.Contains("CONTINUOUS")) { currentLineType_1.Name = "CONTINUOUS"; }
+            else{ currentLineType_1.Name = $"{firstLineType.Name} {lineTypePattern_1}"; }    
             // толщина 
             var widthLabel_1 = comboLineTypeWidth_1.Current as RibbonLabel;
             Double.TryParse(widthLabel_1.Description, out double val1_1);
@@ -579,7 +534,8 @@ namespace ACAD_test
                 var patternLabel_2 = comboLineTypePattern_2.Current as RibbonLabel;
                 var lineTypePattern_2 = patternLabel_2.Description;
                 // имя типа линии в БД Autocad
-                currentLineType_2.Name = $"{secondLineType.Name} {lineTypePattern_2}";
+                if (lineTypePattern_2.Contains("CONTINUOUS")) { currentLineType_2.Name = "CONTINUOUS"; }
+                else { currentLineType_2.Name = $"{secondLineType.Name} {lineTypePattern_2}"; }
                 // толщина 
                 var widthLabel_2 = comboLineTypeWidth_2.Current as RibbonLabel;
                 Double.TryParse(widthLabel_2.Description, out double val2_1);
@@ -766,13 +722,13 @@ namespace ACAD_test
 
                     foreach (var val in pattern)
                     {
-                        descriprionTxt += $"_{val}";
                         if (val == 1000)
                         {
                             txt = "сплошная";
-                            descriprionTxt = "_continuous";
+                            descriprionTxt = "_CONTINUOUS";
                             break;
                         }
+                        descriprionTxt += $"_{val}";
                         txt += $" [{val}] ";
                     }
                     if (txt != "")
@@ -1144,7 +1100,7 @@ namespace ACAD_test
                     double dist_2 = double.MaxValue;
 
                     double scale = db.Cannoscale.DrawingUnits;
-                    double scaleFactor = db.Insunits == UnitsValue.Millimeters ? 0.001 : 1;
+                   //double scaleFactor = db.Insunits == UnitsValue.Millimeters ? 0.001 : 1;
 
                     //проходимся по всем элементам выбора
                     foreach (var id in listElementsID)
@@ -1185,10 +1141,13 @@ namespace ACAD_test
                                 basePoly = dist_1 < dist_2 ? tempPoly_1 : tempPoly_2;
                             }
 
-                            try { tempPoly_1 = (Autodesk.AutoCAD.DatabaseServices.Polyline)basePoly.GetOffsetCurves(2.5 * scale + offset)[0]; }
+                            // пользовательские настр-йки
+                            var userOptions = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath);
+
+                            try { tempPoly_1 = (Autodesk.AutoCAD.DatabaseServices.Polyline)basePoly.GetOffsetCurves(userOptions.LineTypeTextHeight * scale + offset)[0]; }
                             catch (Autodesk.AutoCAD.Runtime.Exception ex) { ed.WriteMessage($"Не получилось создать подобную линию для полилинии с Id = {id}"); }
 
-                            try { tempPoly_2 = (Autodesk.AutoCAD.DatabaseServices.Polyline)basePoly.GetOffsetCurves(-2.5 * scale - offset)[0]; }
+                            try { tempPoly_2 = (Autodesk.AutoCAD.DatabaseServices.Polyline)basePoly.GetOffsetCurves(-userOptions.LineTypeTextHeight * scale - offset)[0]; }
                             catch (Autodesk.AutoCAD.Runtime.Exception ex) { ed.WriteMessage($"Не получилось создать подобную линию для полилинии с Id = {id}"); }
 
                             // определяем результирующую линию
@@ -1255,6 +1214,9 @@ namespace ACAD_test
 
                   
                     polyline.Linetype = lineType.Name;
+
+
+
 
 
                     polyline.LinetypeScale = koef / curSC.DrawingUnits;

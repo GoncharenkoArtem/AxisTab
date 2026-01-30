@@ -3,9 +3,10 @@ using System.Collections.Generic;
 
 namespace TSODD
 {
+
     public class DrawingTSODD
     {
-        public Autodesk.AutoCAD.ApplicationServices.Document doc { get; set; }  // текущий документ
+        public Autodesk.AutoCAD.ApplicationServices.Document doc { get; set; } = null;// текущий документ
         public List<Axis> axis { get; set; } = new List<Axis>();    // список всех осей
         public Axis currentAxis { get; set; }                       // текущая ось
         public string currentSignGroup { get; set; }                // текущая группа знаков
@@ -14,6 +15,7 @@ namespace TSODD
         public string currentSignBlock { get; set; }                // текущий блок знака
         public string currentMarkBlock { get; set; }                // текущий блок разметки
         public string currentMarksLineType { get; set; }            // текущий блок стойки
+
     }
 
 

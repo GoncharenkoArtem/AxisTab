@@ -1,4 +1,4 @@
-﻿using ACAD_test;
+﻿using TSODD;
 using System;
 using System.Collections.Generic;
 
@@ -19,6 +19,7 @@ namespace TSODD
                 if (!tsoddDictionary.TryGetValue(key, out var s))
                 {
                     s = new DrawingTSODD();
+                    s.doc = doc;
                     s.axis = RibbonInitializer.GetListOfAxis(); // заполняем List<Axis> axis 
                     if (s.axis.Count > 0) s.currentAxis = s.axis[0];    // текущая ось
                     tsoddDictionary[key] = s;

@@ -11,7 +11,7 @@ using TSODD.forms;
 using TSODD.Forms;
 
 
-namespace ACAD_test
+namespace TSODD
 {
     public partial class RibbonInitializer : IExtensionApplication
     {
