@@ -163,6 +163,9 @@
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="Blocks.cs" />
+    <Compile Include="Forms\CommandsInfo.xaml.cs">
+      <DependentUpon>CommandsInfo.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Options.cs" />
     <Compile Include="FilesLocation.cs" />
     <Compile Include="Forms\LineTypeForm.xaml.cs">
@@ -228,6 +231,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Forms\UserOptions.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Forms\CommandsInfo.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

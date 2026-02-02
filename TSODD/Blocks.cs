@@ -16,6 +16,8 @@ using System.Windows.Interop;
 using System.Windows.Media.Imaging;
 using TSODD.forms;
 using ACAD = Autodesk.AutoCAD.ApplicationServices;
+using System.Windows.Controls;
+using System.Security.Cryptography;
 
 
 namespace TSODD
@@ -337,7 +339,7 @@ namespace TSODD
             }
 
             // Запрашиваем точку и вставляем BlockReference
-            var ppo = ed.GetPoint("\n Укажите точку вставки блока (Esc - выход): ");
+            var ppo = ed.GetPoint("\n Укажите точку вставки блока (Esc - отмена): ");
             if (ppo.Status != PromptStatus.OK)
             {
                 blockInsertFlag = true;
@@ -411,7 +413,7 @@ namespace TSODD
             ed.PointMonitor += Ed_PointMonitor;
 
             // создаем промпт выбора точки вставки блока
-            var ppr = ed.GetPoint("\n Укажите точку вставки блока (Esc - выход): ");
+            var ppr = ed.GetPoint("\n Укажите точку вставки блока (Esc - отмена): ");
 
             // обработчик события курсора
             void Ed_PointMonitor(object sender, PointMonitorEventArgs e)
@@ -492,7 +494,7 @@ namespace TSODD
                     {
                         while (true)
                         {
-                            var ppr2 = ed.GetPoint("\n Укажите блок стойки к которому нужно привязать знак (Esc - выход): ");
+                            var ppr2 = ed.GetPoint("\n Укажите блок стойки к которому нужно привязать знак (Esc - отмена): ");
                             if (ppr2.Status != PromptStatus.OK)
                                 return;
 
@@ -1094,9 +1096,6 @@ namespace TSODD
                                     match = true;
                                     break;
                                 }
-
-
-
                             }
                         }
 
@@ -1116,46 +1115,139 @@ namespace TSODD
         //  **************************************************************   РАБОТА СО СТОЙКАМИ   **************************************************************    //
 
         // перепривязывает блоки стоек к выбранной оси
-        public static void ReBindStandBlockToAxis()
+        public static void ReBindObjects()
         {
             var doc = ACAD.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
             var ed = doc.Editor;
 
-            var objectIdList = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "INSERT" });
+            var objectIdList = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "INSERT", "LWPOLYLINE", "POLYLINE" }, "\n Выберите объекты которые необходимо привязать (Esc - отмена):");
+            var objectId = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "INSERT", "LWPOLYLINE", "POLYLINE" }, "\n Выберите целевой объект привязки (к нему будут привязаны выбранные объекты) (Esc - отмена):",true);
 
-            // постфильтр, проверяем есть ли в блоках тег "STAND", порлучем список с Id блоков
-            List<ObjectId> standBlocks = GetBloclListIdByTagFromSelection(db, objectIdList, "STAND");
 
-            if (standBlocks == null || standBlocks.Count == 0) // если не нашли блоки стоек, то выходим
+            if (objectIdList == null || objectId== null || objectIdList.Count == 0 || objectId.Count != 1)
             {
-                ed.WriteMessage("\n Не выбрано ни одного блока стоек \n");
+                ed.WriteMessage("\n Ошибка выбора объектов \n");
                 return;
             }
-            else
-            {
-                ed.WriteMessage($"\n Найдено {standBlocks.Count} блоков стоек \n");
-            }
 
-            Axis selectedAxis = RibbonInitializer.Instance.SelectAxis();  // готовая команда вернет выбранную ось
-            if (selectedAxis == null) return;
-
-
-            // перебором меняем нужный тег привязки к оси
+            // проверяем целевой объект
             using (var lok = doc.LockDocument())
             using (var tr = db.TransactionManager.StartTransaction())
             {
-                foreach (var blockId in standBlocks)
+
+                Entity targetEntity = null;
+                try { targetEntity = (Entity)tr.GetObject(objectId.First(), OpenMode.ForRead); }
+                catch { ed.WriteMessage("\n Ошибка целевого объекта \n"); return; }
+
+                // Если целевой объект это блок, то он дожен быть стойкой
+                if (targetEntity is BlockReference br) 
                 {
-                    var bref = (BlockReference)tr.GetObject(blockId, OpenMode.ForRead);
-                    ChangeAttribute(tr, bref, "ОСЬ", selectedAxis.Name);
+                    bool match = false;
+
+                    // проверяем наличие подходящего атрибута
+                    foreach (ObjectId attrId in br.AttributeCollection)
+                    {
+                        var attr = tr.GetObject(attrId, OpenMode.ForRead) as AttributeReference;
+                        if (attr == null) continue;
+
+                        if (attr.Tag.Equals("STAND", StringComparison.OrdinalIgnoreCase))
+                        {
+                            match = true;
+                            break;
+                        }
+                    }
+
+                    if(!match)  // некорректный целевой блок стойки
+                    {
+                        ed.WriteMessage("\n Ошибка целевого объекта. \n");
+                        return;
+                    }
+
+                    // постфильтр, проверяем есть ли в блоках тег "SIGN", порлучем список с Id блоков
+                    List<ObjectId> signBlocks = GetBloclListIdByTagFromSelection(db, objectIdList, "SIGN");
+
+                    foreach (var blockId in signBlocks)
+                    {
+                        var bref = (BlockReference)tr.GetObject(blockId, OpenMode.ForRead);
+                        ChangeAttribute(tr, bref, "STANDHANDLE", br.Handle.ToString());
+                    }
+
+                    ed.WriteMessage($"\n {signBlocks.Count} шт. блоков знаков привязаны к стойке {br.Name}. \n");
                 }
 
-                tr.Commit();
+
+
+
+
+
+
+                // Если целевой объект полилиния, то она должна быть осью
+                if (targetEntity is Polyline polyline)
+                {
+                    // проверяем ось
+                    Axis axis = TsoddHost.Current.axis.FirstOrDefault(a => a.PolyID == objectId.First());
+                    if (axis == null)
+                    {
+                        ed.WriteMessage("\n Ошибка целевого объекта. \n");
+                        return;
+                    }
+
+                    // перепривяжем стойки к выбранной оси
+                    List<ObjectId> standBlocks = GetBloclListIdByTagFromSelection(db, objectIdList, "STAND");
+
+                    foreach (var blockId in standBlocks)
+                    {
+                        var bref = (BlockReference)tr.GetObject(blockId, OpenMode.ForRead);
+                        ChangeAttribute(tr, bref, "ОСЬ", axis.Name);
+                    }
+
+                    if (standBlocks.Count>0) ed.WriteMessage($"\n {standBlocks.Count} шт. блоков стоек привязаны к оси {axis.Name}. \n");
+
+
+                    // перепривяжем блоки разметки к выбранной оси
+                    List<ObjectId> markBlocks = GetBloclListIdByTagFromSelection(db, objectIdList, "MARK");
+
+                    foreach (var blockId in markBlocks)
+                    {
+                        var bref = (BlockReference)tr.GetObject(blockId, OpenMode.ForRead);
+                        ChangeAttribute(tr, bref, "ОСЬ", axis.Name);
+                    }
+
+                    if (markBlocks.Count > 0) ed.WriteMessage($"\n {markBlocks.Count} шт. блоков разметки привязаны к оси {axis.Name}. \n");
+
+                    // перепривяжем линии разметки к выбранной оси
+                    HashSet<ObjectId> polySet = new HashSet<ObjectId>();
+
+                    foreach (var polyId in objectIdList)
+                    {
+                        TsoddXdataElement tsoddXdataElement = new TsoddXdataElement();
+                        tsoddXdataElement.Parse(polyId);
+
+                        if (tsoddXdataElement.MasterPolylineID != ObjectId.Null)
+                        {
+                            polySet.Add(tsoddXdataElement.MasterPolylineID);
+
+                            Polyline masterPolyline = (Polyline)tr.GetObject(tsoddXdataElement.MasterPolylineID, OpenMode.ForRead);
+                            
+                            var temListXdata = AutocadXData.ReadXData(masterPolyline.Id);
+                            temListXdata[2] = (((int)DxfCode.ExtendedDataHandle, axis.PolyHandle.ToString()));
+                            AutocadXData.UpdateXData(masterPolyline.Id, temListXdata);
+                        }
+                    }
+
+                    if (polySet.Count > 0)  ed.WriteMessage($"\n {polySet.Count} шт. линий разметки привязаны к оси {axis.Name}. \n");
+
+                }
+
+            tr.Commit();
             }
 
-            ed.WriteMessage($"\n Блоки перепривязаны к оси {selectedAxis.Name} \n");
+            return;
         }
+
+
+
 
 
         // получает списиок Id блоков из выделения рамкой, которые соответствуют указанному тегу
@@ -1193,7 +1285,7 @@ namespace TSODD
             var db = doc.Database;
             var ed = doc.Editor;
 
-            var objectIdList = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string>());
+            var objectIdList = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string>(), "\n Выберите объекты, можно рамкой выбрать несколько (Esc - отмена):");
             if (objectIdList == null || objectIdList.Count == 0)
             {
                 ed.WriteMessage(" \n Не выбраны объекты. Сначала выберите объекты, которые следует добавить в пользовательский блок разметки. \n");
@@ -1275,9 +1367,10 @@ namespace TSODD
                                     defaultValue: $"{TsoddHost.Current.currentAxis.Name}",
                                     pointsForPK[0], 0, 2.5, true, true);
                 AddAttributeToBlock(btr, tr, tag: "MARK", prompt: "Тег для идентификации ", defaultValue: "", Point3d.Origin,1);
-                AddAttributeToBlock(btr, tr, tag: "NUMBER", prompt: "Тег для идентификации ", defaultValue: $"{psr.StringResult}", Point3d.Origin,2);
-                AddAttributeToBlock(btr, tr, tag: "MATERIAL", prompt: "Материал", defaultValue: "Термопластик", Point3d.Origin, 3);
-                AddAttributeToBlock(btr, tr, tag: "MARKEXISTENCE", prompt: "Наличие", defaultValue: "Требуется нанести", Point3d.Origin, 4);
+                AddAttributeToBlock(btr, tr, tag: "SQUARE", prompt: "Площадь", defaultValue: "-1", Point3d.Origin, 2);
+                AddAttributeToBlock(btr, tr, tag: "NUMBER", prompt: "Номер ", defaultValue: $"{psr.StringResult}", Point3d.Origin,3);
+                AddAttributeToBlock(btr, tr, tag: "MATERIAL", prompt: "Материал", defaultValue: "Термопластик", Point3d.Origin, 4);
+                AddAttributeToBlock(btr, tr, tag: "MARKEXISTENCE", prompt: "Наличие", defaultValue: "Нанести", Point3d.Origin, 5);
 
 
                 // делаем вставку блока
@@ -2159,7 +2252,7 @@ namespace TSODD
                 string lineTypeName = polyline.Linetype;
 
                 // если сплошная линия
-                if (lineTypeName.Contains("continuous"))
+                if (lineTypeName.Contains("Continuous"))
                 {
                     return polyline.Length * polyline.ConstantWidth * Math.Pow(koef, 2);
                 }
@@ -2167,6 +2260,7 @@ namespace TSODD
                 int start = lineTypeName.IndexOf('(') + 1;
                 int end = lineTypeName.IndexOf(')', start);
                 var values = lineTypeName.Substring(start, end - start).Split('_');
+
                 patternValues.dash = values.Select(x => double.Parse(x)).Where(x => x > 0).Sum();
                 patternValues.space = Math.Abs(values.Select(x => double.Parse(x)).Where(x => x < 0).Sum());
 
@@ -2203,7 +2297,6 @@ namespace TSODD
 
                     Vector3d projectionVector = (objPoint - pkPoint).GetNormal();   // вектор, направленный по проекции объекта на ось
                     Point3d projectionPoint = pkPoint + projectionVector * 1;       // точка на проекции объекта на ось
-
 
                     Vector3d vectorAxis = (pkPoint - secondPointOnAxis).GetNormal();
                     Vector3d vrctorPoint = (projectionPoint - secondPointOnAxis).GetNormal();

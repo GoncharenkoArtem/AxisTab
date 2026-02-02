@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TSODD"
         mc:Ignorable="d"
-        Title="Настройки" Height="470" Width="370" ResizeMode="NoResize">
+        Title="Настройки" Height="500" Width="370" ResizeMode="NoResize">
     <Grid>
         <StackPanel Orientation="Vertical" Margin="0,5,0,0">
         
@@ -16,6 +16,7 @@
                     <RowDefinition Height="30"></RowDefinition>
                     <RowDefinition Height="30"></RowDefinition>
                     <RowDefinition Height="30"></RowDefinition>
+                    
                 </Grid.RowDefinitions>
 
                 <Grid.ColumnDefinitions>
@@ -101,7 +102,18 @@
                 <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MleaderTextHeight, Mode=TwoWay}" Width="40" Height="22" VerticalAlignment ="Center" HorizontalAlignment="Center" HorizontalContentAlignment="Center"  VerticalContentAlignment="Center" ></TextBox>
             </Grid>
         </GroupBox>
+
+            
+               
+            <Button Grid.Row="0" Width="250" Height="20" Click="Button_Click" Background="Transparent" BorderBrush="Transparent" Margin="0,5,0,0" >
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Показать пользовательские команды"></TextBlock>
+                    <Image Source="pack://application:,,,/TSODD;component/images/arrow.png" Margin="10,0,0,0"></Image >
+                </StackPanel>
+            </Button>
+
             
         </StackPanel>
+
     </Grid>
 </Window>
