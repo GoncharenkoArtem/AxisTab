@@ -6,6 +6,7 @@ using System.Linq;
 using TSODD;
 using TSODD.forms;
 using TSODD.Forms;
+using System.Windows;
 
 public static class TsoddCommands
 {
@@ -91,11 +92,11 @@ public static class TsoddCommands
         TsoddBlock.InsertSignBlock(TsoddHost.Current.currentSignBlock);
     }
 
-    [CommandMethod("BIND_TO_AXIS")]
-    [CommandMethod("ПРИВЯЗАТЬ_К_ОСИ")]
-    public static void Cmd_BindToAxis()
+    [CommandMethod("BIND_OBJECTS")]
+    [CommandMethod("ПРИВЯЗАТЬ_ОБЪЕКТЫ")]
+    public static void Cmd_BindObjects()
     {
-        TsoddBlock.ReBindStandBlockToAxis();
+        TsoddBlock.ReBindObjects();
     }
 
     [CommandMethod("INSERT_TSODD_BLOCK")]
@@ -133,8 +134,6 @@ public static class TsoddCommands
     {
         OptionsForm optionsForm = new OptionsForm();
         optionsForm.ShowDialog();
-
-        TsoddBlock.BuildTemplateDWG();
     }
 
     [CommandMethod("LOAD_BLOCK_TO_DB")]
@@ -207,7 +206,6 @@ public static class TsoddCommands
         ExportEnd exportEnd = new ExportEnd();
         exportEnd.ShowDialog();
     }
-
 
 
 

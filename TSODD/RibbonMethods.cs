@@ -30,6 +30,9 @@ namespace TSODD
 
             if (_dbIntPtr.Add(key))       // если в структуре баз не было такого ключа, то добавит его
             {
+                e.Document.ViewChanged += Document_ViewChanged;
+
+
                 e.Document.CommandEnded += MdiActiveDocument_CommandEnded;
                 e.Document.CommandCancelled += MdiActiveDocument_CommandEnded;
                 db.ObjectErased += Db_ObjectErased;     // событие на удаление объекта из DB]
@@ -41,7 +44,10 @@ namespace TSODD
             TsoddBlock.blockInsertFlag = true; // разрешаем вставку блоков
         }
 
-
+        private void Document_ViewChanged(object sender, EventArgs e)
+        {
+            var tt = 0;
+        }
 
         private void Editor_PromptForSelectionEnding(object sender, PromptForSelectionEndingEventArgs e)
         {
@@ -548,7 +554,7 @@ namespace TSODD
             }
 
             // делаем выбор объектов и получаем их ID
-            var listObjectsID = GetAutoCadSelectionObjectsId(new List<string> { "LWPOLYLINE", "POLYLINE" });
+            var listObjectsID = GetAutoCadSelectionObjectsId(new List<string> { "LWPOLYLINE", "POLYLINE" }, "\n Выберите полилинию (Esc-выход):");
 
             if (listObjectsID == null) { _marksLineTypeFlag = true; splitMarksLineTypes.IsEnabled = true; rowLineType.IsEnabled = true; return; } // не выбрано ни одного объекта - нечего менять, выходим
 
@@ -1010,7 +1016,7 @@ namespace TSODD
         /// </summary>
         public void LineTypeInvert()
         {
-            var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "LWPOLYLINE" });
+            var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "LWPOLYLINE" }, "\n Выберите линию разметки (Esc-выход):");
 
             if (listElementsID == null) return;
 
@@ -1075,7 +1081,7 @@ namespace TSODD
         /// </summary>
         public void LineTypeTextInvert()
         {
-            var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "LWPOLYLINE" });
+            var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "LWPOLYLINE" }, "\n Выберите линию разметки (Esc-выход):");
 
             if (listElementsID == null) return;
 
@@ -1469,67 +1475,67 @@ namespace TSODD
 
 
 
+        //// заполняет RibbonSplitButton элементами RibbonButton с именами и картинками
+        //public void FillBlocksMenu(RibbonSplitButton split, string tag, string preselect = null)
+        //{
+        //    split.Items.Clear();
 
-        // заполняет RibbonSplitButton элементами RibbonButton с именами и картинками
-        public void FillBlocksMenu(RibbonSplitButton split, string tag, string preselect = null)
-        {
-            split.Items.Clear();
+        //    //если это знаки, то будем получать список 
+        //    string group = null;
+        //    if (tag == "SIGN" && TsoddHost.Current.currentSignGroup != null) group = TsoddHost.Current.currentSignGroup;
 
-            //если это знаки, то будем получать список 
-            string group = null;
-            if (tag == "SIGN" && TsoddHost.Current.currentSignGroup != null) group = TsoddHost.Current.currentSignGroup;
+        //    var listOfBlocks = TsoddBlock.GetListOfBlocks(tag, group);    // формируем список блоков по тегу
 
-            var listOfBlocks = TsoddBlock.GetListOfBlocks(tag, group);    // формируем список блоков по тегу
+        //    foreach (var block in listOfBlocks)                         // для всех блков сосздаем кнопку RibbonButton с имененм и картинкой
+        //    {
+        //        var item = new RibbonButton
+        //        {
+        //            Text = block.name,
+        //            ShowText = true,
+        //            ShowImage = block.img != null,
+        //            Image = block.img,      // иконка в меню
+        //            LargeImage = block.img, // пусть будет и large
+        //            Size = RibbonItemSize.Standard,
+        //            Orientation = System.Windows.Controls.Orientation.Horizontal,
+        //            CommandParameter = block.name
+        //        };
 
-            foreach (var block in listOfBlocks)                         // для всех блков сосздаем кнопку RibbonButton с имененм и картинкой
-            {
-                var item = new RibbonButton
-                {
-                    Text = block.name,
-                    ShowText = true,
-                    ShowImage = block.img != null,
-                    Image = block.img,      // иконка в меню
-                    LargeImage = block.img, // пусть будет и large
-                    Size = RibbonItemSize.Standard,
-                    Orientation = System.Windows.Controls.Orientation.Horizontal,
-                    CommandParameter = block.name
-                };
+        //        item.CommandHandler = new RelayCommandHandler(() =>
+        //        {
+        //            var name = (string)item.CommandParameter;
+        //            switch (tag)
+        //            {
+        //                case "STAND":
+        //                    TsoddBlock.InsertStandOrMarkBlock(name, true);
+        //                    break;
+        //                case "SIGN":
+        //                    TsoddBlock.InsertSignBlock(name);
+        //                    break;
+        //            }
 
-                item.CommandHandler = new RelayCommandHandler(() =>
-                {
-                    var name = (string)item.CommandParameter;
-                    switch (tag)
-                    {
-                        case "STAND":
-                            TsoddBlock.InsertStandOrMarkBlock(name, true);
-                            break;
-                        case "SIGN":
-                            TsoddBlock.InsertSignBlock(name);
-                            break;
-                    }
+        //        });
 
-                });
-                split.Items.Add(item);
-            }
+        //        split.Items.Add(item);
+        //    }
 
-            // Если нужен предвыбор
-            if (preselect != null)
-            {
-                var ribButton = split.Items.OfType<RibbonButton>().FirstOrDefault(r => r.Text == preselect);
-                if (ribButton != null) split.Current = ribButton;
-            }
-        }
+        //    // Если нужен предвыбор
+        //    if (preselect != null)
+        //    {
+        //        var ribButton = split.Items.OfType<RibbonButton>().FirstOrDefault(r => r.Text == preselect);
+        //        if (ribButton != null) split.Current = ribButton;
+        //    }
+        //}
 
 
         // метод выбора элементов в AutoCAD с фильтром
 
-        public List<ObjectId> GetAutoCadSelectionObjectsId(SelectionFilter filter, bool singleSelection = false)
+        public List<ObjectId> GetAutoCadSelectionObjectsId(SelectionFilter filter, string textMessage,  bool singleSelection = false)
         {
             var doc = TsoddHost.Current.doc;
             var ed = doc.Editor;
 
-            string textMessage = "\n Выберите объекты, можно рамкой выбрать несколько:";
-            if (singleSelection) textMessage = "\n Выберите объект:";
+            //string textMessage = "\n Выберите объекты, можно рамкой выбрать несколько:";
+            //if (singleSelection) textMessage = "\n Выберите объект:";
 
             var pso = new PromptSelectionOptions
             {
@@ -1548,7 +1554,7 @@ namespace TSODD
             return resultList;
         }
 
-        public List<ObjectId> GetAutoCadSelectionObjectsId(List<string> filterList, bool singleSelection = false)
+        public List<ObjectId> GetAutoCadSelectionObjectsId(List<string> filterList, string textMessage, bool singleSelection = false)
         {
             // массив TypedValue[] для фильтра
             TypedValue[] typedValue = new TypedValue[filterList.Count + 2];
@@ -1562,7 +1568,7 @@ namespace TSODD
                 filter = new SelectionFilter(typedValue);
             }
 
-            return GetAutoCadSelectionObjectsId(filter, singleSelection);
+            return GetAutoCadSelectionObjectsId(filter, textMessage, singleSelection);
         }
 
 

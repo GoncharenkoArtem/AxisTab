@@ -20,11 +20,13 @@ namespace TSODD
         Storyboard windowStoryboardStart = new Storyboard();
         Storyboard windowStoryboardEnd = new Storyboard();
         Storyboard textStoryboard = new Storyboard();
-        int screenWidth;
-        int screenHeight;
+        double locationX;
+        double locationY;
+        double screenWidth;
+        double screenHeight;
 
-        int minValue;
-        int maxValue;
+        double minValue;
+        double maxValue;
         int type = 0;
 
 
@@ -45,10 +47,17 @@ namespace TSODD
         {
             InitializeComponent();
 
-            var hwnd = new WindowInteropHelper(this).Handle;
-            var scr = Screen.FromHandle(hwnd);
-            screenWidth = scr.Bounds.Width;
-            screenHeight = scr.Bounds.Height;
+  
+            var app = Autodesk.AutoCAD.ApplicationServices.Application.MainWindow;
+
+            var doc = TsoddHost.Current.doc;
+
+
+            locationX = app.DeviceIndependentLocation.X;
+            locationY = app.DeviceIndependentLocation.Y;
+            screenWidth = app.DeviceIndependentSize.Width;
+            screenHeight = app.DeviceIndependentSize.Height;
+
 
             this.Height = 0;
             this.Width = 0;
@@ -62,11 +71,9 @@ namespace TSODD
             Random rndm = new Random();
             type = rndm.Next(0, 4);
 
+           
             StartAnimation();
-
         }
-
-
 
 
         private void StartAnimation()
@@ -81,13 +88,13 @@ namespace TSODD
                     height = 410;
                     width = 400;
 
-                    this.Top = screenHeight;
+                    this.Top = locationY + screenHeight;
                     this.Height = 0;
                     this.Width = width;
 
-                    GetImage(cock_image, "cock_1", 20, 180);
-                    GetImage(cloud_image, "cloud_left", 10, 10);
-                    GetText(25, 28);
+                    GetImage(cock_image, "cock_1", 60, 180);
+                    GetImage(cloud_image, "cloud_left", 50, 10);
+                    GetText(60, 28);
                     RandomizeFormPosition(true);
 
                     maxValue = height;
@@ -102,13 +109,13 @@ namespace TSODD
                     height = 440;
                     width = 410;
 
-                    this.Top = screenHeight;
+                    this.Top = locationY + screenHeight;
                     this.Height = 0;
                     this.Width = width;
 
-                    GetImage(cock_image, "cock_2", 0, 190);
-                    GetImage(cloud_image, "cloud_left", 10, 10);
-                    GetText(25, 28);
+                    GetImage(cock_image, "cock_2", 40, 190);
+                    GetImage(cloud_image, "cloud_left", 50, 10);
+                    GetText(60, 28);
                     RandomizeFormPosition(true);
 
                     maxValue = height;
@@ -123,7 +130,7 @@ namespace TSODD
                     height = 385;
                     width = 385;
 
-                    this.Left = 0;
+                    this.Left = locationX;
                     this.Height = height;
                     this.Width = 0;
 
@@ -148,9 +155,9 @@ namespace TSODD
                     this.Height = height;
                     this.Width = width;
 
-                    GetImage(cock_image, "cock_3", -10, 20);
-                    GetImage(cloud_image, "cloud_left_2", 195, 0);
-                    GetText(240, 15);
+                    GetImage(cock_image, "cock_3", -10, 35);
+                    GetImage(cloud_image, "cloud_left_2", 195, 15);
+                    GetText(240, 30);
                     RandomizeFormPosition(false);
 
                     maxValue = width;
@@ -159,11 +166,8 @@ namespace TSODD
                     RightAnimationWindow(windowStoryboardStart, maxValue, minValue, false);
 
                     break;
-
             }
         }
-
-
 
 
         private void RandomizeFormPosition(bool horizontal)
@@ -171,18 +175,18 @@ namespace TSODD
             Random randomVal = new Random();
             if (horizontal)
             {
-                int Xposition = randomVal.Next((int)(screenWidth / 4 - this.Width / 2), (int)(screenWidth * 3 / 4 - this.Width / 2));
+                int Xposition = randomVal.Next((int)((locationX + screenWidth / 4)  - this.Width / 2), (int)((locationX + screenWidth * 3 / 4)  - this.Width / 2));
                 this.Left = Xposition;
             }
             else
             {
-                int Yposition = randomVal.Next((int)(screenHeight / 4 - this.Height / 2), (int)(screenHeight * 3 / 4 - this.Height / 2));
+                int Yposition = randomVal.Next((int)((locationY + screenHeight / 4)  - this.Height / 2), (int)((locationY + screenHeight * 3 / 4)  - this.Height / 2));
                 this.Top = Yposition;
             }
         }
 
 
-        private void BottomAnimationWindow(Storyboard storyboard, int max, int min, bool invert)
+        private void BottomAnimationWindow(Storyboard storyboard, double max, double min, bool invert)
         {
             // Анимация высоты
             DoubleAnimation heightAnimation = new DoubleAnimation
@@ -198,8 +202,8 @@ namespace TSODD
             // Анимация позиции
             DoubleAnimation topAnimation = new DoubleAnimation
             {
-                From = invert ? screenHeight - max : screenHeight - min,
-                To = invert ? screenHeight - min : screenHeight - max,
+                From = invert ? screenHeight + locationY - max : screenHeight + locationY - min,
+                To = invert ? screenHeight + locationY - min : screenHeight + locationY - max,
                 Duration = TimeSpan.FromSeconds(0.3)
             };
 
@@ -210,12 +214,11 @@ namespace TSODD
             storyboard.Children.Add(heightAnimation);
             storyboard.Children.Add(topAnimation);
             storyboard.Begin();
+
         }
 
 
-
-
-        private void LeftAnimationWindow(Storyboard storyboard, int max, int min, bool invert)
+        private void LeftAnimationWindow(Storyboard storyboard, double max, double min, bool invert)
         {
             // Анимация высоты
             DoubleAnimation widthAnimation = new DoubleAnimation
@@ -231,7 +234,7 @@ namespace TSODD
             // Анимация позиции
             DoubleAnimation leftAnimation = new DoubleAnimation
             {
-                From = invert ? 0 : -cock_image.Width,
+                From = invert ? 0: -cock_image.Width,
                 To = invert ? -cock_image.Width : 0,
                 Duration = TimeSpan.FromSeconds(0.3)
             };
@@ -246,8 +249,7 @@ namespace TSODD
         }
 
 
-
-        private void RightAnimationWindow(Storyboard storyboard, int max, int min, bool invert)
+        private void RightAnimationWindow(Storyboard storyboard, double max, double min, bool invert)
         {
             // Анимация высоты
             DoubleAnimation widthAnimation = new DoubleAnimation
@@ -263,8 +265,8 @@ namespace TSODD
             // Анимация позиции
             DoubleAnimation leftAnimation = new DoubleAnimation
             {
-                From = invert ? screenWidth - max : screenWidth - min,
-                To = invert ? screenWidth - min : screenWidth - max,
+                From = invert ? locationX + screenWidth - max : locationX +  screenWidth - min,
+                To = invert ? locationX + screenWidth - min : locationX +  screenWidth - max,
                 Duration = TimeSpan.FromSeconds(0.3)
             };
 
@@ -276,11 +278,6 @@ namespace TSODD
             storyboard.Children.Add(leftAnimation);
             storyboard.Begin();
         }
-
-
-
-
-
 
 
         // обработчик после первой анимации окна

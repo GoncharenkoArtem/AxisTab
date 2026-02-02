@@ -1,18 +1,24 @@
 ﻿using Autodesk.AutoCAD.DatabaseServices;
+using Autodesk.AutoCAD.GraphicsInterface;
 using System;
 using System.Collections.ObjectModel;
 using System.Windows;
+using TSODD.Forms;
 
 namespace TSODD
 {
     /// <summary>
     /// Логика взаимодействия для OptionsForm.xaml
     /// </summary>
+    /// 
+
     public partial class OptionsForm : Window
     {
         private Options userOptions;
         private ObservableCollection<string> textStyleNames = new ObservableCollection<string>();
         private ObservableCollection<string> mleaderStyleNames = new ObservableCollection<string>();
+        public CommandsInfo commandsInfo  = null;
+        public bool dragFlag;
 
         public OptionsForm()
         {
@@ -25,14 +31,25 @@ namespace TSODD
             this.Left = locationX + screenWidth / 2 - this.Width / 2;
             this.Top = SystemParameters.PrimaryScreenHeight / 2 - this.Height / 2;
 
-
             OnLoad();
 
             this.DataContext = userOptions;
             this.Closed += OptionsForm_Closed;
-
+            this.LocationChanged += OptionsForm_LocationChanged;
         }
 
+        private void OptionsForm_LocationChanged(object sender, EventArgs e)
+        {
+            if (commandsInfo == null) return;
+
+            if (dragFlag) return;
+            dragFlag = true;
+
+            commandsInfo.Top = this.Top;
+            commandsInfo.Left = this.Left + 370;
+
+            dragFlag = false;
+        }
 
 
         private void OnLoad()
@@ -77,14 +94,21 @@ namespace TSODD
             cb_PKTextStyle.ItemsSource = textStyleNames;
             cb_LineTypeTextStyle.ItemsSource = textStyleNames;
             cb_MleadertStyle.ItemsSource = mleaderStyleNames;
-
         }
 
-
+        private void Button_Click(object sender, RoutedEventArgs e)
+        {
+            if (commandsInfo == null)
+            {
+                commandsInfo = new CommandsInfo(this);
+                commandsInfo.Show();
+            }
+        }
 
         private void OptionsForm_Closed(object sender, EventArgs e)
         {
             JsonReader.SaveToJson<Options>(userOptions, FilesLocation.JsonOptionsPath);
+            if(commandsInfo != null) {commandsInfo.Close(); }
         }
 
     }

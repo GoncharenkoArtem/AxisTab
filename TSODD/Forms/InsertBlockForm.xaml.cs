@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media.Imaging;
 
@@ -31,21 +32,47 @@ namespace TSODD.Forms
 
             lv_Groups.ItemsSource = _groups;
             lv_Blocks.ItemsSource = _blocks;
-            cb_TypeOfElements.SelectedIndex = 0;
+            cb_TypeOfElements.SelectedIndex = TsoddHost.Current.currentInsertBlockTab;
         }
 
         private void cb_TypeOfElements_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (cb_TypeOfElements.SelectedIndex == 0) _currentGroup = "SIGN";
-            if (cb_TypeOfElements.SelectedIndex == 1) _currentGroup = "MARK";
-            FillListViewByGroups();
-            if (lv_Groups.Items.Count > 0) lv_Groups.SelectedIndex = 0;
+            bool stands = false;
+            if (cb_TypeOfElements.SelectedIndex == 0) { _currentGroup = "STAND"; stands = true; }
+            if (cb_TypeOfElements.SelectedIndex == 1) _currentGroup = "SIGN";
+            if (cb_TypeOfElements.SelectedIndex == 2) _currentGroup = "MARK";
+
+            TsoddHost.Current.currentInsertBlockTab = cb_TypeOfElements.SelectedIndex;
+
+            FillListViewByGroups(stands);
+            
         }
 
-        private void FillListViewByGroups()
+        private void FillListViewByGroups(bool stands)
         {
             _groups.Clear();
             _blocks.Clear();
+
+            if (stands)
+            {
+                lb_Groups.Visibility = System.Windows.Visibility.Collapsed;
+                lv_Groups.Visibility = System.Windows.Visibility.Collapsed;
+
+                var listOfBlocks = TsoddBlock.GetListOfBlocks(_currentGroup, null);
+
+                foreach (var block in listOfBlocks)
+                {
+                    _blocks.Add(new BlockForInsert { Name = block.name, BMPsource = block.img });
+                }
+
+                return;
+            }
+            else
+            {
+                lb_Groups.Visibility = System.Windows.Visibility.Visible;
+                lv_Groups.Visibility = System.Windows.Visibility.Visible;
+            }
+
             var doc = TsoddHost.Current.doc;
             var db = doc.Database;
 
@@ -65,7 +92,33 @@ namespace TSODD.Forms
             }
 
             foreach (var group in groups) { _groups.Add(group); }
+
+            // предвыбор группы
+            if (_currentGroup == "SIGN")
+            {
+                if (_groups.Contains(TsoddHost.Current.currentSignGroup))
+                {
+                    lv_Groups.SelectedItem = TsoddHost.Current.currentSignGroup;
+                }
+                else
+                {
+                    if (lv_Groups.Items.Count > 0) lv_Groups.SelectedIndex = 0; 
+                }
+            }
+
+            if (_currentGroup == "MARK")
+            {
+                if (_groups.Contains(TsoddHost.Current.currentMarkGroup))
+                {
+                    lv_Groups.SelectedItem = TsoddHost.Current.currentMarkGroup;
+                }
+                else
+                {
+                    if (lv_Groups.Items.Count > 0) lv_Groups.SelectedIndex = 0;
+                }
+            }
         }
+
 
         private void lv_Groups_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
@@ -83,6 +136,7 @@ namespace TSODD.Forms
 
             var listOfBlocks = TsoddBlock.GetListOfBlocks(_currentGroup, selectedGroup);
 
+
             foreach (var block in listOfBlocks)
             {
                 _blocks.Add(new BlockForInsert { Name = block.name, BMPsource = block.img });
@@ -96,23 +150,26 @@ namespace TSODD.Forms
         }
 
 
-
         private void BlockInsert()
         {
             var selectedVal = lv_Blocks.SelectedValue as BlockForInsert;
             if (selectedVal == null) return;
-            if (lv_Groups.SelectedValue == null) return;
 
             this.Close();
 
-            if (cb_TypeOfElements.SelectedIndex == 0)
-            {
-                TsoddBlock.InsertSignBlock(selectedVal.Name);
+            switch (cb_TypeOfElements.SelectedIndex )
+            { 
+                case 0:
+                    TsoddBlock.InsertStandOrMarkBlock(selectedVal.Name, true);
+                    break;
+                case 1:
+                    TsoddBlock.InsertSignBlock(selectedVal.Name);
+                    break;
+                case 2:
+                    TsoddBlock.InsertStandOrMarkBlock(selectedVal.Name, false);
+                    break;
             }
-            else
-            {
-                TsoddBlock.InsertStandOrMarkBlock(selectedVal.Name, false);
-            }
+
         }
 
 
@@ -128,10 +185,23 @@ namespace TSODD.Forms
             if (message == MessageBoxResult.Yes)
             {
                 TsoddBlock.DeleteBlockFromBD(blockName.Name);
-                lv_Groups_SelectionChanged(null, null);
+
+                if (cb_TypeOfElements.SelectedIndex == 0)
+                {
+                    _blocks.Clear();
+                    var listOfBlocks = TsoddBlock.GetListOfBlocks(_currentGroup, null);
+
+                    foreach (var block in listOfBlocks)
+                    {
+                        _blocks.Add(new BlockForInsert { Name = block.name, BMPsource = block.img });
+                    }
+                }
+                else
+                {
+                    lv_Groups_SelectionChanged(null, null);
+                }
             }
         }
-
 
 
         private void Button_Add_Click(object sender, RoutedEventArgs e)
@@ -139,33 +209,19 @@ namespace TSODD.Forms
             BlockInsert();
         }
 
+
         private void Button_Exit_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
         }
 
-
     }
-
-
-
-
-
-
-
-
-
-
 
     public class BlockForInsert
     {
         public string Name { get; set; }
         public BitmapSource BMPsource { get; set; }
     }
-
-
-
-
 
 
 }

@@ -120,12 +120,10 @@ namespace TSODD.forms
         }
 
 
-
-
         // обработчик выбора блока
         private void bt_blockSelector_Click(object sender, RoutedEventArgs e)
         {
-            var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "INSERT" }, true);
+            var listElementsID = RibbonInitializer.Instance.GetAutoCadSelectionObjectsId(new List<string> { "INSERT" }, "\n Выберите блок в модели", true);
             if (listElementsID == null || listElementsID.Count != 1) return;
 
             var doc = TsoddHost.Current.doc;
@@ -389,15 +387,19 @@ namespace TSODD.forms
                     TsoddBlock.SyncDrawOrder(oldOrder, tempBtr, tempMap, tr);
 
                     // делаем snapshot
-                    _bmpBlockIcon = TsoddBlock.GetBlockBitmap(tempBtr, 250, out _extents);
-                    var bmpSource = TsoddBlock.ToImageSource(_bmpBlockIcon);
-                    im_blockImage.Source = bmpSource;    // обновляем картинку
-
                     // если это стойка, то для preview блока надо сделать маленькую картинку
                     if (rb_Stand.IsChecked == true)
                     {
-                        _bmpBlockIcon = TsoddBlock.GetBlockBitmap(tempBtr, 32, out _extents);
+                        _bmpBlockIcon = TsoddBlock.GetBlockBitmap(tempBtr, 150, out _extents);
                     }
+                    else
+                    {
+                        _bmpBlockIcon = TsoddBlock.GetBlockBitmap(tempBtr, 250, out _extents);
+                    }
+                    var bmpSource = TsoddBlock.ToImageSource(_bmpBlockIcon);
+                    im_blockImage.Source = bmpSource;    // обновляем картинку
+
+                
 
                     // удаляем временный блок
                     tempBtr.UpgradeOpen();
@@ -518,8 +520,11 @@ namespace TSODD.forms
             }
             else
             {
-                if (cb_Groups.Items.Count > 0) cb_Groups.SelectedIndex = 0;
-                TsoddHost.Current.currentMarkGroup = cb_Groups.SelectedValue.ToString();
+                if (cb_Groups.Items.Count > 0)
+                {
+                    cb_Groups.SelectedIndex = 0;
+                    TsoddHost.Current.currentMarkGroup = cb_Groups.SelectedValue.ToString();
+                }
             }
             RefreshBlockImage(dataGridValues);
         }
@@ -672,7 +677,7 @@ namespace TSODD.forms
                                     _extents, _bmpBlockIcon, (bool)chb_singleSign.IsChecked, cb_Groups.SelectedValue?.ToString() ?? "", markSquare);
 
             // заполняем список стоек 
-            if ((bool)rb_Stand.IsChecked) RibbonInitializer.Instance.FillBlocksMenu(RibbonInitializer.Instance.splitStands, "STAND", blockName);
+            //if ((bool)rb_Stand.IsChecked) RibbonInitializer.Instance.FillBlocksMenu(RibbonInitializer.Instance.splitStands, "STAND", blockName);
 
         }
 

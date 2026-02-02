@@ -14,6 +14,7 @@ namespace TSODD
         public string currentSignBlock { get; set; }                // текущий блок знака
         public string currentMarkBlock { get; set; }                // текущий блок разметки
         public string currentMarksLineType { get; set; }            // текущий блок стойки
+        public int currentInsertBlockTab { get; set; } = 0;         // текущая вкладка формы вставки блоков
     }
 
 

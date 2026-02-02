@@ -8,10 +8,10 @@
         Width="400" Height="400"
         ResizeMode="NoResize"
         AllowsTransparency="True"
+        WindowStyle="None"
         Background="Transparent"
         ShowInTaskbar="False"
-        Topmost="True"
-        WindowStyle="None">
+        Topmost="True">
 
 
     <Grid>

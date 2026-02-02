@@ -110,12 +110,14 @@ namespace TSODD
 
                 // настраиваем контрол со стойками
                 InitializeSplitButtons(splitStands, "Стойки");
+                
                 // заполняем 
-                FillBlocksMenu(splitStands, "STAND");
+                //FillBlocksMenu(splitStands, "STAND");
 
                 // обновляем  элементы LineType
                 ListOfMarksLinesLoad(200, 20);
                 LineTypeReader.RefreshLineTypesInAcad();
+
             }
         }
 
@@ -198,8 +200,6 @@ namespace TSODD
                 })
             };
 
-
-
             // Кнопка изменения начальной точки
             var bt_startPoint = new RibbonButton
             {
@@ -260,36 +260,36 @@ namespace TSODD
 
             /* ************************************************           СТОЙКИ            ************************************************ */
 
-            RibbonPanelSource panelSourceStands = new RibbonPanelSource
-            {
-                Title = "Стойки"
-            };
+            //RibbonPanelSource panelSourceStands = new RibbonPanelSource
+            //{
+            //    Title = "Стойки"
+            //};
 
-            RibbonPanel panel_2 = new RibbonPanel
-            {
-                Source = panelSourceStands
-            };
-            tab.Panels.Add(panel_2);
+            //RibbonPanel panel_2 = new RibbonPanel
+            //{
+            //    Source = panelSourceStands
+            //};
+            //tab.Panels.Add(panel_2);
 
-            // добавляем на ribbon
-            panelSourceStands.Items.Add(splitStands);
+            //// добавляем на ribbon
+            //panelSourceStands.Items.Add(splitStands);
 
-            // кнопка перепривязки стоек к оси
-            RibbonButton axisBinding = new RibbonButton
-            {
-                Text = "Привязать к оси",
-                ShowText = true,
-                Size = RibbonItemSize.Large,
-                Orientation = Orientation.Vertical,
-                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/stand_bindToAxis.png"),
-                CommandHandler = new RelayCommandHandler(() =>
-                {
-                    TsoddHost.Current.doc?.SendStringToExecute("BIND_TO_AXIS ", true, false, false);
+            //// кнопка перепривязки стоек к оси
+            //RibbonButton axisBinding = new RibbonButton
+            //{
+            //    Text = "Привязать к оси",
+            //    ShowText = true,
+            //    Size = RibbonItemSize.Large,
+            //    Orientation = Orientation.Vertical,
+            //    LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/stand_bindToAxis.png"),
+            //    CommandHandler = new RelayCommandHandler(() =>
+            //    {
+            //        TsoddHost.Current.doc?.SendStringToExecute("BIND_TO_AXIS ", true, false, false);
 
-                })
-            };
+            //    })
+            //};
 
-            panelSourceStands.Items.Add(axisBinding);
+            //panelSourceStands.Items.Add(axisBinding);
 
 
             /* ************************************************           БЛОКИ            ************************************************ */
@@ -335,6 +335,7 @@ namespace TSODD
             };
             panelSourceBlocks.Items.Add(userBlock);
 
+   
             /* ************************************************          РАЗМЕТКА            ************************************************ */
 
             panelSourceMarks = new RibbonPanelSource
@@ -520,6 +521,23 @@ namespace TSODD
                 Source = panelSourceSelection
             };
             tab.Panels.Add(panel_6);
+
+
+            // кнопка перепривязки
+            RibbonButton objectsBinding = new RibbonButton
+            {
+                Text = "Привязать объекты",
+                ShowText = true,
+                Size = RibbonItemSize.Large,
+                Orientation = Orientation.Vertical,
+                LargeImage = LoadImage("pack://application:,,,/TSODD;component/images/stand_bindToAxis.png"),
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    TsoddHost.Current.doc?.SendStringToExecute("BIND_OBJECTS ", true, false, false);
+
+                })
+            };
+            panelSourceSelection.Items.Add(objectsBinding);
 
 
             var bt_quickSelection = new RibbonButton
