@@ -24,7 +24,12 @@ namespace AxisTAb
         private static readonly HashSet<IntPtr> _dbIntPtr = new HashSet<IntPtr>();
         private readonly HashSet<ObjectId> _dontDeleteMe = new HashSet<ObjectId>();
         private readonly HashSet<ObjectId> _deleteMe = new HashSet<ObjectId>();
-        DispatcherTimer _timer;
+        public DispatcherTimer timer;
+
+        public bool inactivity = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath).Inactivity;
+        public double currentTimeSpan = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath).InactivityTimeSpan;
+        
+        AnimationForm animationForm;
 
         public void Initialize()
         {
@@ -40,12 +45,12 @@ namespace AxisTAb
 
 
             // таймер для отслеживания бездействия пользователя
-            _timer= new DispatcherTimer
+            timer= new DispatcherTimer
             {
-                Interval = TimeSpan.FromMinutes(0.1)   
+                Interval = TimeSpan.FromMinutes(currentTimeSpan)   
             };
 
-            _timer.Tick += _timer_Tick;
+            timer.Tick += _timer_Tick;
 
         }
 
@@ -53,25 +58,40 @@ namespace AxisTAb
         // перезапускает таймер отслеживания
         private void RestartTimer()
         {
-            _timer.Stop();
-            _timer.Start();
+            timer.Stop();
+            timer.Start();
+            thisWindowActive = true;
+
+            if (animationForm != null)
+            {
+                animationForm.RunClosingAnimation();
+                animationForm = null;
+            }
         }
 
 
         // таймер сработал пора показывать анимацию
+
+        private bool thisWindowActive;
         private void _timer_Tick(object sender, EventArgs e)
         {
+
+            if(!inactivity) return;
 
             if (!WindowAcadActivity.IsAutoCADActive())
             {
                 RestartTimer();
+                thisWindowActive = false;
                 return;
             }
 
-            MessageBox.Show("timer");
-            
-        }
+            if (animationForm == null && thisWindowActive)
+            {
+                animationForm = new AnimationForm();
+                animationForm.Show();
+            }
 
+        }
 
         public void Terminate()
         {
@@ -159,7 +179,7 @@ namespace AxisTAb
 
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    DrawingHost.Current.doc?.SendStringToExecute("NEW_AXIS ", true, false, false);
+                    DrawingHost.Current.doc?.SendStringToExecute("IA_NEW_AXIS ", true, false, false);
                 })
             };
             panelSourceAxis.Items.Add(bt_newAxis);
@@ -186,7 +206,7 @@ namespace AxisTAb
                 Image = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_name.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    DrawingHost.Current.doc?.SendStringToExecute("SET_AXIS_NAME ", true, false, false);
+                    DrawingHost.Current.doc?.SendStringToExecute("IA_SET_AXIS_NAME ", true, false, false);
                 })
             };
 
@@ -200,7 +220,7 @@ namespace AxisTAb
                 Image = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_startPoint.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    DrawingHost.Current.doc?.SendStringToExecute("SET_AXIS_START_POINT ", true, false, false);
+                    DrawingHost.Current.doc?.SendStringToExecute("IA_SET_AXIS_START_POINT ", true, false, false);
                 })
             };
 
@@ -227,7 +247,7 @@ namespace AxisTAb
                 LargeImage = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_setPK.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    DrawingHost.Current.doc?.SendStringToExecute("SET_PK ", true, false, false); 
+                    DrawingHost.Current.doc?.SendStringToExecute("IA_SET_PK ", true, false, false); 
                 })
             };
 
@@ -241,13 +261,44 @@ namespace AxisTAb
                 LargeImage = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_getPK.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
-                    DrawingHost.Current.doc?.SendStringToExecute("GET_PK ", true, false, false);
+                    DrawingHost.Current.doc?.SendStringToExecute("IA_GET_PK ", true, false, false);
                 })
             };
 
             panelSourceAxis.Items.Add(bt_setPK);
             panelSourceAxis.Items.Add(bt_getPK);
 
+
+
+            /* ************************************************          НАСТРОЙКИ и БД            ************************************************ */
+
+            RibbonPanelSource panelSourceOptions = new RibbonPanelSource
+            {
+                Title = "Настройки"
+            };
+
+            RibbonPanel panel_5 = new RibbonPanel
+            {
+                Source = panelSourceOptions
+            };
+            tab.Panels.Add(panel_5);
+
+            var bt_options = new RibbonButton
+            {
+                Name = "",
+                Text = "Настройки",
+                ShowText = true,
+                LargeImage = LoadImage("pack://application:,,,/AxisTAb;component/images/options.png"),
+                Orientation = Orientation.Vertical,
+                Size = RibbonItemSize.Large,
+                CommandHandler = new RelayCommandHandler(() =>
+                {
+                    DrawingHost.Current.doc?.SendStringToExecute("IA_OPTIONS_AXIS ", true, false, false);
+                })
+            };
+           
+            panelSourceOptions.Items.Add(bt_options);
+            panelSourceOptions.Items.Add(new RibbonSeparator());
         }
     }
 

@@ -1,13 +1,14 @@
 ﻿using AxisTAb;
 using Autodesk.AutoCAD.EditorInput;
 using Autodesk.AutoCAD.Runtime;
+using AxisTab;
 
 
 public static class AxisTabCommands
 {
 
-    [CommandMethod("NEW_AXIS_1")]
-    [CommandMethod("НОВАЯ_ОСЬ_1")]
+    [CommandMethod("IA_NEW_AXIS")]
+    [CommandMethod("IA_НОВАЯ_ОСЬ")]
     public static void Cmd_NewAxis()
     {
         Axis newAxis = new Axis();
@@ -15,15 +16,8 @@ public static class AxisTabCommands
     }
 
 
-
-
-
-
-
-
-
-    [CommandMethod("SET_AXIS_NAME")]
-    [CommandMethod("ПЕРЕИМЕНОВАТЬ_ОСЬ")]
+    [CommandMethod("IA_SET_AXIS_NAME")]
+    [CommandMethod("IA_ПЕРЕИМЕНОВАТЬ_ОСЬ")]
     public static void Cmd_AxisName()
     {
         var selectedAxis = RibbonInitializer.Instance.SelectAxis();
@@ -34,8 +28,8 @@ public static class AxisTabCommands
         RibbonInitializer.Instance?.ListOFAxisRebuild();
     }
 
-    [CommandMethod("SET_AXIS_START_POINT")]
-    [CommandMethod("СТАРТОВАЯ_ТОЧКА_ОСИ")]
+    [CommandMethod("IA_SET_AXIS_START_POINT")]
+    [CommandMethod("IA_СТАРТОВАЯ_ТОЧКА_ОСИ")]
     public static void Cmd_AxisStartPoint()
     {
         var selectedAxis = RibbonInitializer.Instance.SelectAxis();
@@ -46,27 +40,35 @@ public static class AxisTabCommands
         RibbonInitializer.Instance?.ListOFAxisRebuild();
     }
 
-    [CommandMethod("SET_PK")]
-    [CommandMethod("НАЗНАЧИТЬ_ПК")]
+    [CommandMethod("IA_SET_PK")]
+    [CommandMethod("IA_НАЗНАЧИТЬ_ПК")]
     public static void Cmd_SetPK()
     {
         RibbonInitializer.Instance.SetPkOnAxis();
     }
 
-    [CommandMethod("GET_PK")]
-    [CommandMethod("ПОЛУЧИТЬ_ПК")]
+    [CommandMethod("IA_GET_PK")]
+    [CommandMethod("IA_ПОЛУЧИТЬ_ПК")]
     public static void Cmd_GetPK()
     {
         RibbonInitializer.Instance.GetPkOnAxis();
     }
 
 
+    [CommandMethod("IA_OPTIONS_AXIS")]
+    [CommandMethod("IA_НАСТРОЙКИ_ОСИ")]
+    public static void Cmd_OptionsTSODD()
+    {
+        OptionsForm optionsForm = new OptionsForm();
+        optionsForm.ShowDialog();
+    }
 
-    [CommandMethod("COCK_ANIMATION")]
+
+    [CommandMethod("IA_COCK_ANIMATION")]
     public static void Cmd_CockAnimation()
     {
-        //ExportEnd exportEnd = new ExportEnd();
-       // exportEnd.ShowDialog();
+      AnimationForm animForm = new AnimationForm();
+      animForm.Show();
     }
 
 

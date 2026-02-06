@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AxisTab"
         mc:Ignorable="d"
-        Title="Window1" Height="450" Width="800">
+        Title="Пользовательские команды" Height="305" Width="800">
     <Grid>
 
         <DataGrid x:Name="grid_commands"
@@ -14,10 +14,7 @@
                                       Grid.ColumnSpan="2"
                                       AutoGenerateColumns="False"
                                       CanUserAddRows="False"
-                                     
-                                      
-                                    
-                                      
+
                                       HeadersVisibility="Column"
                                       HorizontalScrollBarVisibility="Disabled"
                                       BorderBrush="Black"
@@ -77,6 +74,7 @@
 
                     <DataGridTemplateColumn.CellStyle>
                         <Style TargetType="DataGridCell">
+                            <Setter Property="Height" Value="37"></Setter>
                             <Setter Property="Background" Value="Gray"/>
                             <Setter Property="HorizontalContentAlignment" Value="Center"/>
                             <Setter Property="VerticalContentAlignment" Value="Center"/>
@@ -92,28 +90,12 @@
 
             <DataGrid.ItemsSource>
                 <x:Array Type="local:CommandsInfoData">
-                    <local:CommandsInfoData EngName="NEW_AXIS" RusName="НОВАЯ_ОСЬ" Description="Создать новую ось" ImageSource="pack://application:,,,/TSODD;component/images/axis_new.png" ImageSize="28"></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="SET_AXIS_NAME" RusName="ПЕРЕИМЕНОВАТЬ_ОСЬ" Description="Переименовать существующую ось" ImageSource="pack://application:,,,/TSODD;component/images/axis_name.png" ImageSize="18" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="SET_AXIS_START_POINT" RusName="СТАРТОВАЯ_ТОЧКА_ОСИ" Description="Назначить точку начала оси от которой будет считаться пикет" ImageSource="pack://application:,,,/TSODD;component/images/axis_startPoint.png" ImageSize="18" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="SET_PK" RusName="НАЗНАЧИТЬ_ПК" Description="Отстроить засечку на оси, соответствующую указанному пикету" ImageSource="pack://application:,,,/TSODD;component/images/axis_setPK.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="GET_PK" RusName="ПОЛУЧИТЬ_ПК" Description="Получить значение пикета оси в указанной точке" ImageSource="pack://application:,,,/TSODD;component/images/axis_getPK.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="LAST_STAND_INSERT" RusName="ПОСЛЕДНЯЯ_СТОЙКА" Description="Вставить последний выбранный блок стойки" ImageSource="" ImageSize="0" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="LAST_SIGN_INSERT" RusName="ПОСЛЕДНИЙ_ЗНАК" Description="Вставить последний выбранный блок знака" ImageSource="" ImageSize="0" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="LAST_MARK_INSERT" RusName="ПОСЛЕДНЯЯ_РАЗМЕТКА" Description="Вставить последний выбранный блок разметки" ImageSource="" ImageSize="0" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="INSERT_TSODD_BLOCK" RusName="ВСТАВИТЬ_БЛОК_ТСОДД" Description="Вызвать форму вставки блоков знаков и разметки" ImageSource="pack://application:,,,/TSODD;component/images/block_insert.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="USER_MARK_BLOCK" RusName="ПОЛЬЗОВАТЕЛЬСКИЙ_БЛОК_РАЗМЕТКИ" Description="Создать пользовательский блок разметкии" ImageSource="pack://application:,,,/TSODD;component/images/block_user.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="MARK_LINE_INVERT" RusName="ИНВЕРТИРОВАТЬ_ЛИНИЮ_РАЗМЕТКИ" Description="Инвертировать форматирование линий для двойной линии разметки" ImageSource="pack://application:,,,/TSODD;component/images/lineType_invertLines.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="MARK_LINE_TEXT_INVERT" RusName="ПЕРЕСТАВИТЬ_ТЕКСТ_РАЗМЕТКИ" Description="Переставить текст линейной разметки на другу сторону" ImageSource="pack://application:,,,/TSODD;component/images/lineType_invertText.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="OPTIONS_TSODD" RusName="НАСТРОЙКИ_ТСОДД" Description="Вызвать форму настроек" ImageSource="pack://application:,,,/TSODD;component/images/options.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="LOAD_BLOCK_TO_DB" RusName="ЗАГРУЗИТЬ_БЛОК_В_БД" Description="Вызвать форму загрузки блоков ТСОДД в базу данных" ImageSource="pack://application:,,,/TSODD;component/images/blocks_loadToBD.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="LOAD_MARK_LINE_TO_DB" RusName="СОЗДАТЬ_ЛИНИЮ_РАЗМЕТКИ" Description="Вызвать форму создания и загрузки линейной разметки" ImageSource="pack://application:,,,/TSODD;component/images/lineType_loadToBD.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="GROUPS_TSODD" RusName="ГРУППЫ_ТСОДД" Description="Вызвать форму создания/удаления групп знаков и разметки" ImageSource="pack://application:,,,/TSODD;component/images/groups.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="BIND_OBJECTS" RusName="ПРИВЯЗАТЬ_ОБЪЕКТЫ" Description="Привязать объекты к оси или стойке" ImageSource="pack://application:,,,/TSODD;component/images/stand_bindToAxis.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="SELECT_TSODD_OBJECTS" RusName="ВЫБОР_ОБЪЕКТОВ_ТСОДД" Description="Вызвать форму быстрого выбора объектов ТСОДД" ImageSource="pack://application:,,,/TSODD;component/images/selectionObjects.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="MULTILEADER_TSODD" RusName="МУЛЬТИВЫНОСКА_ТСОДД" Description="Вставить мультивыноску объекта ТСОДД" ImageSource="pack://application:,,,/TSODD;component/images/mleader.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="QUICK_PROPERTIES_TSODD_ON/OFF" RusName="БЫСТРЫЕ_СВОЙСТВА_ТСОДД_ВКЛ/ВЫКЛ" Description="Включает и выключает быстрые свойства блоков знаков и разметки" ImageSource="pack://application:,,,/TSODD;component/images/quickProperties_OFF.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="EXPORT_SIGNS" RusName="ВЕДОМОСТЬ_ЗНАКОВ" Description="Экспорт адресноой ведомости знаков в Эксель" ImageSource="pack://application:,,,/TSODD;component/images/xls_export_signs.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="EXPORT_МАRKS" RusName="ВЕДОМОСТЬ_РАЗМЕТКИ" Description="Экспорт адресноой ведомости разметки в Эксель" ImageSource="pack://application:,,,/TSODD;component/images/xls_export_marks.png" ImageSize="28" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_NEW_AXIS" RusName="IA_НОВАЯ_ОСЬ" Description="Создать новую ось" ImageSource="pack://application:,,,/AxisTab;component/images/axis_new.png" ImageSize="28"></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_SET_AXIS_NAME" RusName="IA_ПЕРЕИМЕНОВАТЬ_ОСЬ" Description="Переименовать существующую ось" ImageSource="pack://application:,,,/AxisTAb;component/images/axis_name.png" ImageSize="18" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_SET_AXIS_START_POINT" RusName="IA_СТАРТОВАЯ_ТОЧКА_ОСИ" Description="Назначить точку начала оси от которой будет считаться пикет" ImageSource="pack://application:,,,/AxisTAb;component/images/axis_startPoint.png" ImageSize="18" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_SET_PK" RusName="IA_НАЗНАЧИТЬ_ПК" Description="Отстроить засечку на оси, соответствующую указанному пикету" ImageSource="pack://application:,,,/AxisTAb;component/images/axis_setPK.png" ImageSize="28" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_GET_PK" RusName="IA_ПОЛУЧИТЬ_ПК" Description="Получить значение пикета оси в указанной точке" ImageSource="pack://application:,,,/AxisTAb;component/images/axis_getPK.png" ImageSize="28" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_OPTIONS_AXIS" RusName="IA_НАСТРОЙКИ_ОСИ" Description="Вызвать форму настроек" ImageSource="pack://application:,,,/AxisTAb;component/images/options.png" ImageSize="28" ></local:CommandsInfoData>
                 </x:Array>
             </DataGrid.ItemsSource>
 

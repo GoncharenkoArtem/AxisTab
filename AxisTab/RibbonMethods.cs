@@ -44,8 +44,6 @@ namespace AxisTAb
         }
 
 
-
-
         private void Document_ViewChanged(object sender, EventArgs e)
         {
             RestartTimer();
@@ -92,48 +90,38 @@ namespace AxisTAb
             var doc = Autodesk.AutoCAD.ApplicationServices.Application.DocumentManager.MdiActiveDocument;
             var db = doc.Database;
 
-
             // проверяем есть ли xData у удаляемого объекта
             if (e.DBObject.XData != null)
             {
-                //XdataElement tsoddXdataElement = new XdataElement();
-                //try { tsoddXdataElement.Parse(e.DBObject.Id); }
-                //catch (Autodesk.AutoCAD.Runtime.Exception ex) { return; }
+                Axis axis = null;
+                try
+                {axis = AutocadXData.AxisXdataParse(e.DBObject.Id);}
+                catch (Autodesk.AutoCAD.Runtime.Exception ex) { return; }
 
-                //if (tsoddXdataElement.Type == TsoddElement.Axis)    // если это ось
-                //{
-                //    // проверка является ли удаляемый объект осью
-                //    var erasedObject = DrawingHost.Current.axis.FirstOrDefault(a => a.PolyID == e.DBObject.Id);
+                if (axis!=null && axis.PolyID != null)    // если это ось
+                {
+                    // проверка является ли удаляемый объект осью
+                    string msg = $"Полилиния привязана к оси {axis.Name}. Вы точно хотите ее удалить?";
 
-                //    if (erasedObject != null)
-                //    {
-                //        string msg = $"Полилиния привязана к оси {erasedObject.Name}. Вы точно хотите ее удалить?";
+                    // последнее предупреждение
+                    var result = MessageBox.Show(msg, "Сообщение", MessageBoxButton.YesNo, MessageBoxImage.Question);
 
-                //        // последнее предупреждение
-                //        var result = MessageBox.Show(msg, "Сообщение", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (result == MessageBoxResult.No)
+                    {
 
-                //        if (result == MessageBoxResult.No)
-                //        {
+                        _dontDeleteMe.Add(axis.PolyID);
+                    }
+                    else    // убираем из списка осей (удаляем невозвратно)
+                    {
 
-                //            _dontDeleteMe.Add(erasedObject.PolyID);
-                //        }
-                //        else    // убираем из списка осей (удаляем невозвратно)
-                //        {
+                        var erasedAxis = DrawingHost.Current.axis.FirstOrDefault(a => a.PolyID == e.DBObject.Id);
+                        DrawingHost.Current.axis.Remove(erasedAxis);
 
-                //            DrawingHost.Current.axis.Remove(erasedObject);
+                        // перестраиваем combobox с осями
+                        ListOFAxisRebuild();
 
-                //            // перестраиваем combobox с осями
-                //            ListOFAxisRebuild();
-
-                //        }
-                //    }
-                //}
-                //else      // если это линия или мультилиния
-                //{
-                //    if (tsoddXdataElement.MasterPolylineID != ObjectId.Null) _deleteMe.Add(tsoddXdataElement.MasterPolylineID);
-                //    if (tsoddXdataElement.SlavePolylineID != ObjectId.Null) _deleteMe.Add(tsoddXdataElement.SlavePolylineID);
-                //    if (tsoddXdataElement.MtextID != ObjectId.Null) _deleteMe.Add(tsoddXdataElement.MtextID);
-                //}
+                    }
+                }
             }
         }
 
@@ -295,7 +283,6 @@ namespace AxisTAb
 
 
 
-
         public List<ObjectId> GetAutoCadSelectionObjectsId(SelectionFilter filter, string textMessage,  bool singleSelection = false)
         {
             var doc = DrawingHost.Current.doc;
@@ -367,6 +354,8 @@ namespace AxisTAb
             ed.WriteMessage($" \n {txt}");
         }
 
+
+
         /// <summary>
         ///  Получает ПК оси указанной точки
         /// </summary>
@@ -401,7 +390,9 @@ namespace AxisTAb
             }
             finally
             {
-                ed.PointMonitor+= OnPointMonitor;
+                ed.PointMonitor -= OnPointMonitor;
+                
+
                 if (string.IsNullOrEmpty(PK))
                 {
                     ed.WriteMessage("\n Ошибка подсчета ПК \n");

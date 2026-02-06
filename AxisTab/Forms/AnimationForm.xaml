@@ -19,6 +19,8 @@
             <Image x:Name="cock_image"></Image >
             <Image x:Name="cloud_image" ></Image >
             <TextBlock x:Name="text_textblock" Background="Transparent" FontSize="25" FontFamily="Comic Sans MS" Width="180" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
+            <TextBlock x:Name="text_timeblock" Background="Transparent" FontSize="25" FontFamily="Comic Sans MS" Width="50" TextWrapping="Wrap" HorizontalAlignment="Right" VerticalAlignment="Center" TextAlignment="Right"/>
+            <TextBlock x:Name="text_secblock" Text="сек." Background="Transparent" FontSize="25" FontFamily="Comic Sans MS" Width="50" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center"/>
         </Canvas>
 
     </Grid>

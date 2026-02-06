@@ -5,40 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:AxisTab"
         mc:Ignorable="d"
-        Title="Window1" Height="450" Width="800">
+        Title="Настройки" Height="305" Width="370">
     <Grid>
 
         <StackPanel Orientation="Vertical" Margin="0,5,0,0">
-
-            <GroupBox Header="Блоки">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="30"></RowDefinition>
-                        <RowDefinition Height="30"></RowDefinition>
-                        <RowDefinition Height="30"></RowDefinition>
-                        <RowDefinition Height="30"></RowDefinition>
-
-                    </Grid.RowDefinitions>
-
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="230" ></ColumnDefinition>
-                        <ColumnDefinition Width="110" ></ColumnDefinition>
-                    </Grid.ColumnDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Вставлять блоки аннотативными" VerticalAlignment ="Center"></TextBlock>
-                    <CheckBox  Grid.Row="0" Grid.Column="1" IsChecked="{Binding BlocksAnnotativeState, Mode=TwoWay}" VerticalAlignment ="Center" HorizontalAlignment="Center"></CheckBox>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Радиус привязки знаков к стойке, м:" VerticalAlignment ="Center" ></TextBlock>
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding BlockBindRadius, Mode=TwoWay}" Width="40" Height="22" VerticalAlignment ="Center" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"></TextBox>
-
-                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Стиль текста номера знака:" VerticalAlignment ="Center" ></TextBlock>
-                    <ComboBox x:Name="cb_blockTextStyle" Grid.Row="2" Grid.Column="1" Width="110" Height="22" SelectedValue="{Binding BlockNameTextStyle, Mode=TwoWay}" VerticalAlignment ="Center" HorizontalContentAlignment="Center" ></ComboBox>
-
-                    <TextBlock Grid.Row="3" Grid.Column="0" Text="Высота текста номера знака:" VerticalAlignment ="Center" ></TextBlock>
-                    <TextBox Grid.Row="3" Grid.Column="1" Text="{Binding BlockNameTextHeight, Mode=TwoWay}" Width="40" Height="22" VerticalAlignment ="Center" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"></TextBox>
-                </Grid>
-            </GroupBox>
-
 
             <GroupBox Header="Пикеты">
                 <Grid>
@@ -64,9 +34,10 @@
                 </Grid>
             </GroupBox>
 
-            <GroupBox Header="Разметка (линии)">
+            <GroupBox Header="Отслеживание бездействия">
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="30"></RowDefinition>
                         <RowDefinition Height="30"></RowDefinition>
                         <RowDefinition Height="30"></RowDefinition>
                     </Grid.RowDefinitions>
@@ -76,31 +47,14 @@
                         <ColumnDefinition Width="110" ></ColumnDefinition>
                     </Grid.ColumnDefinitions>
 
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Стиль текста подписи линии разметки:" VerticalAlignment ="Center" ></TextBlock>
-                    <ComboBox x:Name="cb_LineTypeTextStyle" Grid.Row="0" Grid.Column="1" Width="110" Height="22" SelectedValue="{Binding LineTypeTextStyle, Mode=TwoWay}" VerticalAlignment ="Center" HorizontalContentAlignment="Center" ></ComboBox>
+                    <CheckBox x:Name="chb_Inactivity" Content="Включить отслеживание бездействия" Grid.Row="0" VerticalAlignment="Center" IsChecked="{Binding Inactivity, Mode=TwoWay}" Click="chb_Inactivity_Click"></CheckBox>
+                    
+                    <TextBlock  Grid.Row="1" Grid.Column="0" Text="Время интервала сообщений, мин" VerticalAlignment ="Center" ></TextBlock>
+                    <TextBox   x:Name="tb_TimeSpan" Grid.Row="1" Grid.Column="1" Text="{Binding InactivityTimeSpan, Mode=TwoWay}" Width="40" Height="22" VerticalAlignment ="Center" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"></TextBox>
+                    
+                    <TextBlock Grid.Row="2" Grid.Column="0" Text="Отслеживаемое время бездействия, мин" VerticalAlignment ="Center" ></TextBlock>
+                    <TextBox Grid.Row="2" Grid.Column="1" Text="{Binding InactivityFullTime, Mode=TwoWay}" Width="40" Height="22" VerticalAlignment ="Center" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"></TextBox>
 
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Высота текста подписи линии разметк:" VerticalAlignment ="Center" ></TextBlock>
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding LineTypeTextHeight, Mode=TwoWay}" Width="40" Height="22" VerticalAlignment ="Center" HorizontalAlignment="Center" HorizontalContentAlignment="Center"  VerticalContentAlignment="Center" ></TextBox>
-                </Grid>
-            </GroupBox>
-
-            <GroupBox Header="Мультивыноски">
-                <Grid>
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="30"></RowDefinition>
-                        <RowDefinition Height="30"></RowDefinition>
-                    </Grid.RowDefinitions>
-
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="230" ></ColumnDefinition>
-                        <ColumnDefinition Width="110" ></ColumnDefinition>
-                    </Grid.ColumnDefinitions>
-
-                    <TextBlock Grid.Row="0" Grid.Column="0" Text="Стиль мультивыносок:" VerticalAlignment ="Center" ></TextBlock>
-                    <ComboBox x:Name="cb_MleadertStyle" Grid.Row="0" Grid.Column="1" Width="110" Height="22" SelectedValue="{Binding MleaderStyle, Mode=TwoWay}" VerticalAlignment ="Center" HorizontalContentAlignment="Center" ></ComboBox>
-
-                    <TextBlock Grid.Row="1" Grid.Column="0" Text="Высота текста мультивыносок:" VerticalAlignment ="Center" ></TextBlock>
-                    <TextBox Grid.Row="1" Grid.Column="1" Text="{Binding MleaderTextHeight, Mode=TwoWay}" Width="40" Height="22" VerticalAlignment ="Center" HorizontalAlignment="Center" HorizontalContentAlignment="Center"  VerticalContentAlignment="Center" ></TextBox>
                 </Grid>
             </GroupBox>
 
@@ -109,7 +63,7 @@
             <Button Grid.Row="0" Width="250" Height="20" Click="Button_Click" Background="Transparent" BorderBrush="Transparent" Margin="0,5,0,0" >
                 <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Показать пользовательские команды"></TextBlock>
-                    <Image Source="pack://application:,,,/TSODD;component/images/arrow.png" Margin="10,0,0,0"></Image >
+                    <Image Source="pack://application:,,,/AxisTAb;component/images/arrow.png" Margin="10,0,0,0"></Image >
                 </StackPanel>
             </Button>
 

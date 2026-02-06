@@ -74,6 +74,8 @@ namespace AxisTAb
         }
 
 
+
+
         public bool GetAxisStartPoint()
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
@@ -136,7 +138,6 @@ namespace AxisTAb
             // xData оси
             var listXData = AutocadXData.ReadXData(this.PolyID);
 
-
             // Настройки промпта
             var peo = new PromptStringOptions("\n Введите наименование оси: ")
             {
@@ -185,7 +186,7 @@ namespace AxisTAb
             // Работа с выбранной полилинией
             using (var tr = doc.TransactionManager.StartTransaction())
             {
-
+             
                 // приводим полилинию к простой линии
                 //RibbonInitializer.MLineTypeToPolyline(per.ObjectId, out var objId);
 

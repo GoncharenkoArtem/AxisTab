@@ -14,6 +14,7 @@ using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 using static Microsoft.IO.RecyclableMemoryStreamManager;
 
 namespace AxisTab
@@ -26,7 +27,6 @@ namespace AxisTab
     {
         private Options userOptions;
         private ObservableCollection<string> textStyleNames = new ObservableCollection<string>();
-        private ObservableCollection<string> mleaderStyleNames = new ObservableCollection<string>();
         public CommandsInfo commandsInfo = null;
         public bool dragFlag;
 
@@ -85,25 +85,11 @@ namespace AxisTab
                         TextStyleTableRecord styleRecord = (TextStyleTableRecord)tr.GetObject(styleId, OpenMode.ForRead);
                         if (!string.IsNullOrEmpty(styleRecord.Name)) textStyleNames.Add(styleRecord.Name);
                     }
-
-                    // стили мультивыносок
-                    DBDictionary dict = tr.GetObject(db.MLeaderStyleDictionaryId, OpenMode.ForRead) as DBDictionary;
-
-                    if (dict != null)
-                    {
-                        foreach (DBDictionaryEntry entry in dict)
-                        {
-                            MLeaderStyle style = tr.GetObject(entry.Value, OpenMode.ForRead) as MLeaderStyle;
-                            mleaderStyleNames.Add(style.Name);
-                        }
-                    }
                 }
             }
 
-            cb_blockTextStyle.ItemsSource = textStyleNames;
             cb_PKTextStyle.ItemsSource = textStyleNames;
-            cb_LineTypeTextStyle.ItemsSource = textStyleNames;
-            cb_MleadertStyle.ItemsSource = mleaderStyleNames;
+
         }
 
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -117,9 +103,28 @@ namespace AxisTab
 
         private void OptionsForm_Closed(object sender, EventArgs e)
         {
+            if (double.TryParse(tb_TimeSpan.Text, out double val))
+            {
+                if (val > 0)
+                {
+                    RibbonInitializer.Instance.currentTimeSpan = val;
+                    RibbonInitializer.Instance.timer.Interval = TimeSpan.FromMinutes(val);
+                }
+            }
+
+
+
             JsonReader.SaveToJson<Options>(userOptions, FilesLocation.JsonOptionsPath);
             if (commandsInfo != null) { commandsInfo.Close(); }
         }
+
+        private void chb_Inactivity_Click(object sender, RoutedEventArgs e)
+        {
+            CheckBox chb = sender as CheckBox;
+            RibbonInitializer.Instance.inactivity = (bool)chb.IsChecked? true : false;
+        }
+
+
 
     }
 }

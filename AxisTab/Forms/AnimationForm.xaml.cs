@@ -1,7 +1,9 @@
-﻿using AxisTAb;
+﻿using Autodesk.AutoCAD.Interop.Common;
+using AxisTAb;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,6 +15,7 @@ using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace AxisTab
 {
@@ -23,7 +26,9 @@ namespace AxisTab
     {
         Storyboard windowStoryboardStart = new Storyboard();
         Storyboard windowStoryboardEnd = new Storyboard();
-        Storyboard textStoryboard = new Storyboard();
+        Storyboard textStoryboardEnd = new Storyboard();
+
+
         double locationX;
         double locationY;
         double screenWidth;
@@ -33,17 +38,22 @@ namespace AxisTab
         double maxValue;
         int type = 0;
 
+        DispatcherTimer _timer;
+        private int startTime  =(int)(JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath).InactivityTimeSpan*60);
+        private int currentTime;
 
         private List<string> txtList = new List<string>
         {
-            $"Привет, бро! \n Я всё \n сделал",
-            "Здравствуй. \n Ведомость\n готова",
-            "День добрый.\n Всё \nготово",
-            "Здорово! \n Сохранил \n ведомость",
-            "Приветствую! \n Всё \n сделано",
-            "Салют! \n Ведомость \n выгружена",
-            "Hi! Как сам? \n Я всё \n сохранил",
-            "Хелло! \n Ведомость \n сохранена"
+            $"Спишь?\nПросыпайся",
+            "Пришло\nвремя клацать",
+            "Давай\nклац-клац",
+            "Всё хорошо?\n Поработаем?",
+            "Давай работать, а?",
+            "Работать \n будем?",
+            "Ну,так и\nбудем сидеть?",
+            "Жми, давай\n скорее!",
+            "Не работает \n и всё тут!",
+            "Так мы денег\nне заработаем",
         };
 
 
@@ -51,33 +61,87 @@ namespace AxisTab
         {
             InitializeComponent();
 
-
             var app = Autodesk.AutoCAD.ApplicationServices.Application.MainWindow;
 
             var doc = DrawingHost.Current.doc;
-
 
             locationX = app.DeviceIndependentLocation.X;
             locationY = app.DeviceIndependentLocation.Y;
             screenWidth = app.DeviceIndependentSize.Width;
             screenHeight = app.DeviceIndependentSize.Height;
 
-
             this.Height = 0;
             this.Width = 0;
 
             text_textblock.Visibility = Visibility.Collapsed;
+            text_timeblock.Visibility = Visibility.Collapsed;
+            text_secblock.Visibility = Visibility.Collapsed;
             cloud_image.Visibility = Visibility.Collapsed;
 
             windowStoryboardStart.Completed += WindowStoryboardStart_Completed;
-            windowStoryboardEnd.Completed += WindowStoryboardEnd_Completed;
+            textStoryboardEnd.Completed += TextStoryboardEnd_Completed;
+            windowStoryboardEnd.Completed += WindowStoryboardEnd_Completed; 
+
+            this.MouseLeftButtonDown += AnimationForm_MouseLeftButtonDown;
 
             Random rndm = new Random();
             type = rndm.Next(0, 4);
 
+            // таймер для обновления счетчика
+            _timer = new DispatcherTimer();
+            _timer.Interval = TimeSpan.FromSeconds(1);
+            _timer.Stop();
+            _timer.Tick += _timer_Tick;
 
+
+            double currentFullTime = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath).InactivityFullTime;
+            currentTime = (int)(currentFullTime*60 - startTime-5);
+
+            // старт анимации
             StartAnimation();
         }
+
+
+
+        // счетчик сработал
+        private void _timer_Tick(object sender, EventArgs e)
+        {
+            if (currentTime > 0)
+            {
+                currentTime -= 1;
+                text_timeblock.Text = $"{currentTime}";
+            }
+            else
+            {
+                text_textblock.Text = "ПОТРАЧЕНО";
+
+                Storyboard fuckUpstory = new Storyboard();
+
+                // Анимация позиции
+                DoubleAnimation topAnimation = new DoubleAnimation
+                {
+                    From = Canvas.GetTop(text_textblock),
+                    To = Canvas.GetTop(text_textblock)+40,
+                    Duration = TimeSpan.FromSeconds(0.3)
+                };
+
+                Storyboard.SetTarget(topAnimation, text_textblock);
+                Storyboard.SetTargetProperty(topAnimation, new PropertyPath(Window.TopProperty));
+                fuckUpstory.Children.Add(topAnimation);
+                fuckUpstory.Begin();
+
+
+                text_timeblock.Visibility = Visibility.Collapsed;
+                text_secblock.Visibility = Visibility.Collapsed;
+                _timer.Stop();
+            }
+            
+            if (currentTime < 26 && currentTime > 16) { text_timeblock.Foreground = Brushes.Orange; }
+            if (currentTime < 16 && currentTime > 6) { text_timeblock.Foreground = Brushes.Salmon; }
+            if (currentTime < 6) { text_timeblock.Foreground = Brushes.Red; }
+
+        }
+
 
 
         private void StartAnimation()
@@ -140,7 +204,7 @@ namespace AxisTab
 
                     GetImage(cock_image, "cock_4", 0, -300);
                     GetImage(cloud_image, "cloud_right_2", 175, 165);
-                    GetText(220, 175);
+                    GetText(220, 172);
                     RandomizeFormPosition(false);
 
                     maxValue = width;
@@ -171,6 +235,7 @@ namespace AxisTab
 
                     break;
             }
+            _timer.Start();
         }
 
 
@@ -289,52 +354,46 @@ namespace AxisTab
         {
             await Task.Delay(300); // пауза 
             text_textblock.Visibility = Visibility.Visible;
+            text_timeblock.Visibility = Visibility.Visible;
+            text_secblock.Visibility = Visibility.Visible;
+
             cloud_image.Visibility = Visibility.Visible;
+            text_timeblock.Text = $"{currentTime}";
 
-            // теперь запускаем анимацию текста 
-            DoubleAnimation doubleAnimationOpacity = new DoubleAnimation()
-            {
-                From = 0,
-                To = 1,
-                Duration = TimeSpan.FromSeconds(0.3)
-            };
 
-            Storyboard.SetTarget(doubleAnimationOpacity, cloud_image);
-            Storyboard.SetTargetProperty(doubleAnimationOpacity, new PropertyPath(Window.OpacityProperty));
-            Storyboard.SetTarget(doubleAnimationOpacity, text_textblock);
-            Storyboard.SetTargetProperty(doubleAnimationOpacity, new PropertyPath(Window.OpacityProperty));
+            Storyboard textStoryboard =new Storyboard();
 
-            // Добавляем в Storyboard
-            textStoryboard.Children.Add(doubleAnimationOpacity);
-            //await Task.Run(() => textStoryboard.Begin()); 
-            textStoryboard.Begin();
-            textStoryboard.Children.Clear();
-
-            await Task.Delay(1500);     //  пауза
-
-            doubleAnimationOpacity = new DoubleAnimation()
+            var doubleAnimationOpacity_1 = new DoubleAnimation()
             {
                 From = 1,
                 To = 0,
                 Duration = TimeSpan.FromSeconds(0.3)
             };
 
-            Storyboard.SetTarget(doubleAnimationOpacity, cloud_image);
-            Storyboard.SetTargetProperty(doubleAnimationOpacity, new PropertyPath(Window.OpacityProperty));
-            Storyboard.SetTarget(doubleAnimationOpacity, text_textblock);
-            Storyboard.SetTargetProperty(doubleAnimationOpacity, new PropertyPath(Window.OpacityProperty));
+            var doubleAnimationOpacity_2 = new DoubleAnimation()
+            {
+                From = 1,
+                To = 0,
+                Duration = TimeSpan.FromSeconds(0.3)
+            };
 
-            // Добавляем в Storyboard
-            textStoryboard.Children.Add(doubleAnimationOpacity);
-            //textStoryboard.Begin();
+            Storyboard.SetTarget(doubleAnimationOpacity_1, cloud_image);
+            Storyboard.SetTargetProperty(doubleAnimationOpacity_1, new PropertyPath(Window.OpacityProperty));
+            textStoryboardEnd.Children.Add(doubleAnimationOpacity_1);
 
-            await Task.Delay(300); // пауза 
-            text_textblock.Visibility = Visibility.Collapsed;
-            cloud_image.Visibility = Visibility.Collapsed;
+            Storyboard.SetTarget(doubleAnimationOpacity_2, text_textblock);
+            Storyboard.SetTargetProperty(doubleAnimationOpacity_2, new PropertyPath(Window.OpacityProperty));
+            textStoryboardEnd.Children.Add(doubleAnimationOpacity_2);
 
-            EndAnimation();
-
+            textStoryboard.Begin();
         }
+
+
+        private void TextStoryboardEnd_Completed(object sender, EventArgs e)
+        {
+            EndAnimation();
+        }
+
 
         private void EndAnimation()
         {
@@ -351,6 +410,57 @@ namespace AxisTab
         {
             this.Close();
         }
+
+
+        private void AnimationForm_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            RunClosingAnimation();
+        }
+
+
+        // анимация завершения 
+        public async void RunClosingAnimation()
+        {
+
+            if (currentTime > 0)
+            {
+                text_timeblock.Visibility = Visibility.Collapsed;
+                text_secblock.Visibility = Visibility.Collapsed;
+                text_textblock.Text = "УСПЕЛИ";
+                Canvas.SetTop(text_textblock, Canvas.GetTop(text_textblock) + 40);
+                await Task.Delay(300); // пауза  
+            }
+
+            var doubleAnimationOpacity_1 = new DoubleAnimation()
+            {
+                From = 1,
+                To = 0,
+                Duration = TimeSpan.FromSeconds(0.3)
+            };
+
+            var doubleAnimationOpacity_2 = new DoubleAnimation()
+            {
+                From = 1,
+                To = 0,
+                Duration = TimeSpan.FromSeconds(0.3)
+            };
+
+            Storyboard.SetTarget(doubleAnimationOpacity_1, cloud_image);
+            Storyboard.SetTargetProperty(doubleAnimationOpacity_1, new PropertyPath(Window.OpacityProperty));
+            textStoryboardEnd.Children.Add(doubleAnimationOpacity_1);
+
+            Storyboard.SetTarget(doubleAnimationOpacity_2, text_textblock);
+            Storyboard.SetTargetProperty(doubleAnimationOpacity_2, new PropertyPath(Window.OpacityProperty));
+            textStoryboardEnd.Children.Add(doubleAnimationOpacity_2);
+
+            textStoryboardEnd.Begin();
+
+        }
+
+
+
+
+
 
 
         // настройка картинки
@@ -371,8 +481,18 @@ namespace AxisTab
             Random random = new Random();
             int number = random.Next(0, txtList.Count);
             text_textblock.Text = txtList[number];
+            
+            // текст подписи
             Canvas.SetLeft(text_textblock, left);
             Canvas.SetTop(text_textblock, top);
+
+            // текст времени
+            Canvas.SetLeft(text_timeblock, left+32);
+            Canvas.SetTop(text_timeblock, top+72);
+
+            //текст подписи "сек"
+            Canvas.SetLeft(text_secblock, left + 85);
+            Canvas.SetTop(text_secblock, top + 72);
         }
 
     }
