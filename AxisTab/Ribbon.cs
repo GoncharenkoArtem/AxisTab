@@ -29,7 +29,7 @@ namespace AxisTAb
         public bool inactivity = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath).Inactivity;
         public double currentTimeSpan = JsonReader.LoadFromJson<Options>(FilesLocation.JsonOptionsPath).InactivityTimeSpan;
         
-        AnimationForm animationForm;
+        public AnimationForm animationForm;
 
         public void Initialize()
         {
@@ -301,10 +301,6 @@ namespace AxisTAb
             panelSourceOptions.Items.Add(new RibbonSeparator());
         }
     }
-
-
-
-
 
 
     public class RelayCommandHandler : ICommand

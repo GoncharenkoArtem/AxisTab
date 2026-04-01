@@ -83,7 +83,7 @@ namespace AxisTab
             windowStoryboardEnd.Completed += WindowStoryboardEnd_Completed; 
 
             this.MouseLeftButtonDown += AnimationForm_MouseLeftButtonDown;
-
+      
             Random rndm = new Random();
             type = rndm.Next(0, 4);
 
@@ -100,6 +100,8 @@ namespace AxisTab
             // старт анимации
             StartAnimation();
         }
+
+      
 
 
 
@@ -409,6 +411,7 @@ namespace AxisTab
         private void WindowStoryboardEnd_Completed(object sender, EventArgs e)
         {
             this.Close();
+            RibbonInitializer.Instance.animationForm = null;
         }
 
 

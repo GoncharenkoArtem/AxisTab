@@ -68,6 +68,7 @@ namespace AxisTab
         private void grid_commands_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
 
+            // TODO DataGrid больше не поддерживается. Взамен используйте DataGridView. Подробности см. в https://docs.microsoft.com/en-us/dotnet/core/compatibility/winforms#removed-controls
             DataGrid grid = sender as DataGrid;
             CommandsInfoData cid = grid.SelectedItem as CommandsInfoData;
 

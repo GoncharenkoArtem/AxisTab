@@ -96,9 +96,9 @@ namespace AxisTAb
                 Axis axis = null;
                 try
                 {axis = AutocadXData.AxisXdataParse(e.DBObject.Id);}
-                catch (Autodesk.AutoCAD.Runtime.Exception ex) { return; }
+                catch (Autodesk.AutoCAD.Runtime.Exception) { return; }
 
-                if (axis!=null && axis.PolyID != null)    // если это ось
+                if (axis!=null && axis.PolyID != ObjectId.Null)    // если это ось
                 {
                     // проверка является ли удаляемый объект осью
                     string msg = $"Полилиния привязана к оси {axis.Name}. Вы точно хотите ее удалить?";

@@ -134,7 +134,7 @@ namespace AxisTAb
                 }
                 return result;
             }
-            catch (Exception ex) { return result; }
+            catch (Exception) { return result; }
         }
 
 
