@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Controls;
 using System.Windows.Input;
-using AxisTAb;
+
 using System.Windows.Threading;
 using System.Windows;
 using System.Diagnostics;
@@ -14,7 +14,7 @@ using System.Runtime.InteropServices;
 using AxisTab;
 
 
-namespace AxisTAb
+namespace AxisTab
 {
     public partial class RibbonInitializer : IExtensionApplication
     {
@@ -173,7 +173,7 @@ namespace AxisTAb
                 Name = "NEWAXIS",
                 Text = "Новая ось",
                 ShowText = true,
-                LargeImage = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_new.png"),
+                LargeImage = LoadImage("pack://application:,,,/AxisTab;component/images/axis_new.png"),
                 Orientation = Orientation.Vertical,
                 Size = RibbonItemSize.Large,
 
@@ -203,7 +203,7 @@ namespace AxisTAb
                 ShowText = true,
                 Size = RibbonItemSize.Standard,
                 Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_name.png"),
+                Image = LoadImage("pack://application:,,,/AxisTab;component/images/axis_name.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     DrawingHost.Current.doc?.SendStringToExecute("IA_SET_AXIS_NAME ", true, false, false);
@@ -217,7 +217,7 @@ namespace AxisTAb
                 ShowText = true,
                 Size = RibbonItemSize.Standard,
                 Orientation = Orientation.Horizontal,
-                Image = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_startPoint.png"),
+                Image = LoadImage("pack://application:,,,/AxisTab;component/images/axis_startPoint.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     DrawingHost.Current.doc?.SendStringToExecute("IA_SET_AXIS_START_POINT ", true, false, false);
@@ -244,7 +244,7 @@ namespace AxisTAb
                 ShowText = true,
                 Size = RibbonItemSize.Large,
                 Orientation = Orientation.Vertical,
-                LargeImage = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_setPK.png"),
+                LargeImage = LoadImage("pack://application:,,,/AxisTab;component/images/axis_setPK.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     DrawingHost.Current.doc?.SendStringToExecute("IA_SET_PK ", true, false, false); 
@@ -258,7 +258,7 @@ namespace AxisTAb
                 ShowText = true,
                 Size = RibbonItemSize.Large,
                 Orientation = Orientation.Vertical,
-                LargeImage = LoadImage("pack://application:,,,/AxisTAb;component/images/axis_getPK.png"),
+                LargeImage = LoadImage("pack://application:,,,/AxisTab;component/images/axis_getPK.png"),
                 CommandHandler = new RelayCommandHandler(() =>
                 {
                     DrawingHost.Current.doc?.SendStringToExecute("IA_GET_PK ", true, false, false);
@@ -288,7 +288,7 @@ namespace AxisTAb
                 Name = "",
                 Text = "Настройки",
                 ShowText = true,
-                LargeImage = LoadImage("pack://application:,,,/AxisTAb;component/images/options.png"),
+                LargeImage = LoadImage("pack://application:,,,/AxisTab;component/images/options.png"),
                 Orientation = Orientation.Vertical,
                 Size = RibbonItemSize.Large,
                 CommandHandler = new RelayCommandHandler(() =>

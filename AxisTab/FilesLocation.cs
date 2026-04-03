@@ -1,7 +1,7 @@
 ﻿using System.IO;
 using System.Reflection;
 
-namespace AxisTAb
+namespace AxisTab
 {
     internal static class FilesLocation
     {
@@ -12,3 +12,4 @@ namespace AxisTAb
 
     }
 }
+ 

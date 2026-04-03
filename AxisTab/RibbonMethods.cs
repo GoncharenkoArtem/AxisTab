@@ -13,7 +13,7 @@ using AxisTab;
 
 
 /* Методы и обработчики для Ribbon */
-namespace AxisTAb
+namespace AxisTab
 {
     public partial class RibbonInitializer : IExtensionApplication
     {

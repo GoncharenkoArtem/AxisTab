@@ -1,4 +1,4 @@
-﻿using AxisTAb;
+﻿
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using System.Collections.Generic;
@@ -9,7 +9,7 @@ using System.Windows;
 
 
 
-namespace AxisTAb
+namespace AxisTab
 {
 
     public class Axis
@@ -75,9 +75,6 @@ namespace AxisTAb
             // перестраиваем combobox наименование осей на ribbon
             RibbonInitializer.Instance?.ListOFAxisRebuild(this);
         }
-
-
-
 
         public bool GetAxisStartPoint()
         {
