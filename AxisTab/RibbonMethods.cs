@@ -451,7 +451,7 @@ namespace AxisTab
             if (polylineAxis == null) return; // выходим, ошибка выбора оси
             double koef = db.Insunits == UnitsValue.Meters ? 1 : 0.001;   // коэффициент перевода в метры
 
-            var peoPk = new PromptDoubleOptions("\n Введите пикет в метрах (1ПК = 100м): ");
+            var peoPk = new PromptDoubleOptions("\n Введите пикет (например, 12.5 = ПК12+50): ");
             var perPk = ed.GetDouble(peoPk);
             if (perPk.Status != PromptStatus.OK)
             {
@@ -502,8 +502,8 @@ namespace AxisTab
                 MText mtext = new MText();
                 mtext.Contents = PK;
                 mtext.Rotation = angle;
-                mtext.TextHeight = userOptions.PKTextHeight / curSC.Scale;
-                mtext.Location = pointOnAxis + ((vector - vector.GetPerpendicularVector()) / curSC.Scale);
+                mtext.TextHeight = userOptions.PKTextHeight / koef / curSC.Scale;
+                mtext.Location = pointOnAxis + ((vector - vector.GetPerpendicularVector()) / koef / curSC.Scale);
 
                 // Получаем таблицу текстовых стилей
                 TextStyleTable textStyleTable = (TextStyleTable)tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);

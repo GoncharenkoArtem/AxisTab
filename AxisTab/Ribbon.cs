@@ -87,8 +87,8 @@ namespace AxisTab
 
             if (animationForm == null && thisWindowActive)
             {
-                animationForm = new AnimationForm();
-                animationForm.Show();
+                //animationForm = new AnimationForm();
+                //animationForm.Show();
             }
 
         }
