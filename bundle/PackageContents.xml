@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ApplicationPackage SchemaVersion="1.0"
+                    AutodeskProduct="AutoCAD"
+                    ProductType="Application"
+                    AppVersion="1.0.0"
+                    Name="IterisAxisTab"
+                    AppName="IterisAxisTab"
+                    Description="AxisTab — оси, начальная точка, пикетаж"
+                    Author="Iteris"
+                    Vendor="Iteris">
+  <CompanyDetails Name="Iteris" Url="http://iteris-group.ru"/>
+  <Components Description="AutoCAD 2024 (R24.3, .NET Framework 4.8)">
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD|Civil3D" SeriesMin="R24.3" SeriesMax="R24.3"/>
+    <ComponentEntry AppName="AxisTab"
+                    ModuleName="./Contents/R24.3/AxisTab.dll"
+                    LoadOnAutoCADStartup="True"/>
+  </Components>
+  <Components Description="AutoCAD 2026 (R25.1, .NET 8)">
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD|Civil3D" SeriesMin="R25.1" SeriesMax="R25.1"/>
+    <ComponentEntry AppName="AxisTab"
+                    ModuleName="./Contents/R25.1/AxisTab.dll"
+                    LoadOnAutoCADStartup="True"/>
+  </Components>
+  <Components Description="AutoCAD 2027 (R26.0, .NET 10)">
+    <RuntimeRequirements OS="Win64" Platform="AutoCAD|Civil3D" SeriesMin="R26.0" SeriesMax="R26.0"/>
+    <ComponentEntry AppName="AxisTab"
+                    ModuleName="./Contents/R26.0/AxisTab.dll"
+                    LoadOnAutoCADStartup="True"/>
+  </Components>
+</ApplicationPackage>

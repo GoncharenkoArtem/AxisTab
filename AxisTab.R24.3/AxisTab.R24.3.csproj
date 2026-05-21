@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{B1A24300-0001-4001-A001-000000000001}</ProjectGuid>
+    <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>AxisTab</RootNamespace>
+    <AssemblyName>AxisTab</AssemblyName>
+    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+    <Deterministic>true</Deterministic>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>bin\Debug\</OutputPath>
+    <DefineConstants>DEBUG;TRACE;ACAD;AC2024</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>bin\Release\</OutputPath>
+    <DefineConstants>TRACE;ACAD;AC2024</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <PlatformTarget>AnyCPU</PlatformTarget>
+  </PropertyGroup>
+  <PropertyGroup>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <AlwaysCompileMarkupFilesInSeparateDomain>false</AlwaysCompileMarkupFilesInSeparateDomain>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Xaml" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
+    <Reference Include="WindowsBase" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="AcCoreMgd, Version=24.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AutoCAD.NET.Core.24.3.0\lib\net47\AcCoreMgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AcDbMgd, Version=24.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AutoCAD.NET.Model.24.3.0\lib\net47\AcDbMgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AcMgd, Version=24.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AutoCAD.NET.24.3.0\lib\net47\AcMgd.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AcWindows, Version=24.3.0.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AutoCAD.NET.24.3.0\lib\net47\AcWindows.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+    <Reference Include="AdWindows, Version=5.0.1.2, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\AutoCAD.NET.24.3.0\lib\net47\AdWindows.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.Text.Json">
+      <HintPath>..\packages\System.Text.Json.8.0.6\lib\net462\System.Text.Json.dll</HintPath>
+    </Reference>
+    <Reference Include="Microsoft.Bcl.AsyncInterfaces">
+      <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.8.0.0\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Buffers">
+      <HintPath>..\packages\System.Buffers.4.5.1\lib\net461\System.Buffers.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Memory">
+      <HintPath>..\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics.Vectors">
+      <HintPath>..\packages\System.Numerics.Vectors.4.5.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.6.0.0\lib\net461\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Text.Encodings.Web">
+      <HintPath>..\packages\System.Text.Encodings.Web.8.0.0\lib\net462\System.Text.Encodings.Web.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Threading.Tasks.Extensions">
+      <HintPath>..\packages\System.Threading.Tasks.Extensions.4.5.4\lib\net461\System.Threading.Tasks.Extensions.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\AxisTab.Main\Axis.cs">
+      <Link>Axis.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Commands.cs">
+      <Link>Commands.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\DrawingHost.cs">
+      <Link>DrawingHost.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\FilesLocation.cs">
+      <Link>FilesLocation.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\JSON.cs">
+      <Link>JSON.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Main Class.cs">
+      <Link>Main Class.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Options.cs">
+      <Link>Options.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Ribbon.cs">
+      <Link>Ribbon.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\RibbonMethods.cs">
+      <Link>RibbonMethods.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\WindowActivity.cs">
+      <Link>WindowActivity.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\XData.cs">
+      <Link>XData.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Properties\AssemblyInfo.cs">
+      <Link>Properties\AssemblyInfo.cs</Link>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Forms\AnimationForm.xaml.cs">
+      <Link>Forms\AnimationForm.xaml.cs</Link>
+      <DependentUpon>AnimationForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Forms\CommandsInfo.xaml.cs">
+      <Link>Forms\CommandsInfo.xaml.cs</Link>
+      <DependentUpon>CommandsInfo.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Forms\OptionsForm.xaml.cs">
+      <Link>Forms\OptionsForm.xaml.cs</Link>
+      <DependentUpon>OptionsForm.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="..\AxisTab.Main\Forms\AnimationForm.xaml">
+      <Link>Forms\AnimationForm.xaml</Link>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="..\AxisTab.Main\Forms\CommandsInfo.xaml">
+      <Link>Forms\CommandsInfo.xaml</Link>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="..\AxisTab.Main\Forms\OptionsForm.xaml">
+      <Link>Forms\OptionsForm.xaml</Link>
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\AxisTab.Main\Images\arrow.png"><Link>Images\arrow.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\axis_getPK.png"><Link>Images\axis_getPK.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\axis_name.png"><Link>Images\axis_name.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\axis_new.png"><Link>Images\axis_new.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\axis_newPK.png"><Link>Images\axis_newPK.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\axis_setPK.png"><Link>Images\axis_setPK.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\axis_startPoint.png"><Link>Images\axis_startPoint.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\cloud_left.png"><Link>Images\cloud_left.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\cloud_left_2.png"><Link>Images\cloud_left_2.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\cloud_right.png"><Link>Images\cloud_right.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\cloud_right_2.png"><Link>Images\cloud_right_2.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\cock_1.png"><Link>Images\cock_1.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\cock_2.png"><Link>Images\cock_2.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\cock_3.png"><Link>Images\cock_3.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\cock_4.png"><Link>Images\cock_4.png</Link></Resource>
+    <Resource Include="..\AxisTab.Main\Images\options.png"><Link>Images\options.png</Link></Resource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="app.config" />
+    <None Include="packages.config" />
+  </ItemGroup>
+
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <Import Project="$(MSBuildExtensionsPath32)\Microsoft.WinFX.targets" Condition="Exists('$(MSBuildExtensionsPath32)\Microsoft.WinFX.targets')" />
+
+  <Target Name="CopyToAppData" AfterTargets="Build" Condition=" '$(Configuration)' == 'Debug' ">
+    <Exec Command="xcopy &quot;$(TargetDir)*.dll&quot; &quot;%25AppData%25\Autodesk\ApplicationPlugins\IterisAxisTab.bundle\Contents\R24.3\&quot; /y /i" />
+    <Exec Command="xcopy &quot;$(TargetDir)*.pdb&quot; &quot;%25AppData%25\Autodesk\ApplicationPlugins\IterisAxisTab.bundle\Contents\R24.3\&quot; /y /i" />
+    <Exec Command="xcopy &quot;$(TargetDir)*.config&quot; &quot;%25AppData%25\Autodesk\ApplicationPlugins\IterisAxisTab.bundle\Contents\R24.3\&quot; /y /i" />
+    <Exec Command="xcopy &quot;$(ProjectDir)..\bundle\PackageContents.xml&quot; &quot;%25AppData%25\Autodesk\ApplicationPlugins\IterisAxisTab.bundle\&quot; /y /i" />
+  </Target>
+</Project>

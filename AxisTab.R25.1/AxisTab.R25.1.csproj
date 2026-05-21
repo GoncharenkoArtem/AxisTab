@@ -1,0 +1,90 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>AxisTab</RootNamespace>
+    <AssemblyName>AxisTab</AssemblyName>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <UseWpf>true</UseWpf>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <DefineConstants>ACAD;AC2026</DefineConstants>
+    <PlatformTarget>x64</PlatformTarget>
+    <RunPostBuildEvent>OnBuildSuccess</RunPostBuildEvent>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+    <EnableDefaultPageItems>false</EnableDefaultPageItems>
+    <EnableDefaultEmbeddedResourceItems>false</EnableDefaultEmbeddedResourceItems>
+    <EnableDefaultNoneItems>false</EnableDefaultNoneItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="AutoCAD.NET" Version="25.1.0" ExcludeAssets="runtime" />
+    <PackageReference Include="AutoCAD.NET.Model" Version="25.1.0" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\AxisTab.Main\Axis.cs" Link="Axis.cs" />
+    <Compile Include="..\AxisTab.Main\Commands.cs" Link="Commands.cs" />
+    <Compile Include="..\AxisTab.Main\DrawingHost.cs" Link="DrawingHost.cs" />
+    <Compile Include="..\AxisTab.Main\FilesLocation.cs" Link="FilesLocation.cs" />
+    <Compile Include="..\AxisTab.Main\JSON.cs" Link="JSON.cs" />
+    <Compile Include="..\AxisTab.Main\Main Class.cs" Link="Main Class.cs" />
+    <Compile Include="..\AxisTab.Main\Options.cs" Link="Options.cs" />
+    <Compile Include="..\AxisTab.Main\Ribbon.cs" Link="Ribbon.cs" />
+    <Compile Include="..\AxisTab.Main\RibbonMethods.cs" Link="RibbonMethods.cs" />
+    <Compile Include="..\AxisTab.Main\WindowActivity.cs" Link="WindowActivity.cs" />
+    <Compile Include="..\AxisTab.Main\XData.cs" Link="XData.cs" />
+    <Compile Include="..\AxisTab.Main\Properties\AssemblyInfo.cs" Link="Properties\AssemblyInfo.cs" />
+    <Compile Include="..\AxisTab.Main\Forms\AnimationForm.xaml.cs" Link="Forms\AnimationForm.xaml.cs">
+      <DependentUpon>AnimationForm.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Forms\CommandsInfo.xaml.cs" Link="Forms\CommandsInfo.xaml.cs">
+      <DependentUpon>CommandsInfo.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="..\AxisTab.Main\Forms\OptionsForm.xaml.cs" Link="Forms\OptionsForm.xaml.cs">
+      <DependentUpon>OptionsForm.xaml</DependentUpon>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Page Include="..\AxisTab.Main\Forms\AnimationForm.xaml" Link="Forms\AnimationForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="..\AxisTab.Main\Forms\CommandsInfo.xaml" Link="Forms\CommandsInfo.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="..\AxisTab.Main\Forms\OptionsForm.xaml" Link="Forms\OptionsForm.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+  </ItemGroup>
+
+  <ItemGroup>
+    <Resource Include="..\AxisTab.Main\Images\arrow.png" Link="Images\arrow.png" />
+    <Resource Include="..\AxisTab.Main\Images\axis_getPK.png" Link="Images\axis_getPK.png" />
+    <Resource Include="..\AxisTab.Main\Images\axis_name.png" Link="Images\axis_name.png" />
+    <Resource Include="..\AxisTab.Main\Images\axis_new.png" Link="Images\axis_new.png" />
+    <Resource Include="..\AxisTab.Main\Images\axis_newPK.png" Link="Images\axis_newPK.png" />
+    <Resource Include="..\AxisTab.Main\Images\axis_setPK.png" Link="Images\axis_setPK.png" />
+    <Resource Include="..\AxisTab.Main\Images\axis_startPoint.png" Link="Images\axis_startPoint.png" />
+    <Resource Include="..\AxisTab.Main\Images\cloud_left.png" Link="Images\cloud_left.png" />
+    <Resource Include="..\AxisTab.Main\Images\cloud_left_2.png" Link="Images\cloud_left_2.png" />
+    <Resource Include="..\AxisTab.Main\Images\cloud_right.png" Link="Images\cloud_right.png" />
+    <Resource Include="..\AxisTab.Main\Images\cloud_right_2.png" Link="Images\cloud_right_2.png" />
+    <Resource Include="..\AxisTab.Main\Images\cock_1.png" Link="Images\cock_1.png" />
+    <Resource Include="..\AxisTab.Main\Images\cock_2.png" Link="Images\cock_2.png" />
+    <Resource Include="..\AxisTab.Main\Images\cock_3.png" Link="Images\cock_3.png" />
+    <Resource Include="..\AxisTab.Main\Images\cock_4.png" Link="Images\cock_4.png" />
+    <Resource Include="..\AxisTab.Main\Images\options.png" Link="Images\options.png" />
+  </ItemGroup>
+
+  <Target Name="CopyToAppData" AfterTargets="Build" Condition=" '$(Configuration)' == 'Debug' ">
+    <Exec Command="xcopy &quot;$(TargetDir)*.dll&quot; &quot;%25AppData%25\Autodesk\ApplicationPlugins\IterisAxisTab.bundle\Contents\R25.1\&quot; /y /i" />
+    <Exec Command="xcopy &quot;$(TargetDir)*.pdb&quot; &quot;%25AppData%25\Autodesk\ApplicationPlugins\IterisAxisTab.bundle\Contents\R25.1\&quot; /y /i" />
+    <Exec Command="xcopy &quot;$(TargetDir)*.json&quot; &quot;%25AppData%25\Autodesk\ApplicationPlugins\IterisAxisTab.bundle\Contents\R25.1\&quot; /y /i" />
+    <Exec Command="xcopy &quot;$(ProjectDir)..\bundle\PackageContents.xml&quot; &quot;%25AppData%25\Autodesk\ApplicationPlugins\IterisAxisTab.bundle\&quot; /y /i" />
+  </Target>
+</Project>
