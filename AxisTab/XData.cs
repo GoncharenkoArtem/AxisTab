@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 
 
-namespace AxisTAb
+namespace AxisTab
 {
 
     // класс для записи/перезаписи и чтения XData полилиний
@@ -134,7 +134,7 @@ namespace AxisTAb
                 }
                 return result;
             }
-            catch (Exception ex) { return result; }
+            catch (Exception) { return result; }
         }
 
 

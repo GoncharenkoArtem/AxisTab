@@ -91,11 +91,11 @@
             <DataGrid.ItemsSource>
                 <x:Array Type="local:CommandsInfoData">
                     <local:CommandsInfoData EngName="IA_NEW_AXIS" RusName="IA_НОВАЯ_ОСЬ" Description="Создать новую ось" ImageSource="pack://application:,,,/AxisTab;component/images/axis_new.png" ImageSize="28"></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="IA_SET_AXIS_NAME" RusName="IA_ПЕРЕИМЕНОВАТЬ_ОСЬ" Description="Переименовать существующую ось" ImageSource="pack://application:,,,/AxisTAb;component/images/axis_name.png" ImageSize="18" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="IA_SET_AXIS_START_POINT" RusName="IA_СТАРТОВАЯ_ТОЧКА_ОСИ" Description="Назначить точку начала оси от которой будет считаться пикет" ImageSource="pack://application:,,,/AxisTAb;component/images/axis_startPoint.png" ImageSize="18" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="IA_SET_PK" RusName="IA_НАЗНАЧИТЬ_ПК" Description="Отстроить засечку на оси, соответствующую указанному пикету" ImageSource="pack://application:,,,/AxisTAb;component/images/axis_setPK.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="IA_GET_PK" RusName="IA_ПОЛУЧИТЬ_ПК" Description="Получить значение пикета оси в указанной точке" ImageSource="pack://application:,,,/AxisTAb;component/images/axis_getPK.png" ImageSize="28" ></local:CommandsInfoData>
-                    <local:CommandsInfoData EngName="IA_OPTIONS_AXIS" RusName="IA_НАСТРОЙКИ_ОСИ" Description="Вызвать форму настроек" ImageSource="pack://application:,,,/AxisTAb;component/images/options.png" ImageSize="28" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_SET_AXIS_NAME" RusName="IA_ПЕРЕИМЕНОВАТЬ_ОСЬ" Description="Переименовать существующую ось" ImageSource="pack://application:,,,/AxisTab;component/images/axis_name.png" ImageSize="18" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_SET_AXIS_START_POINT" RusName="IA_СТАРТОВАЯ_ТОЧКА_ОСИ" Description="Назначить точку начала оси от которой будет считаться пикет" ImageSource="pack://application:,,,/AxisTab;component/images/axis_startPoint.png" ImageSize="18" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_SET_PK" RusName="IA_НАЗНАЧИТЬ_ПК" Description="Отстроить засечку на оси, соответствующую указанному пикету" ImageSource="pack://application:,,,/AxisTab;component/images/axis_setPK.png" ImageSize="28" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_GET_PK" RusName="IA_ПОЛУЧИТЬ_ПК" Description="Получить значение пикета оси в указанной точке" ImageSource="pack://application:,,,/AxisTab;component/images/axis_getPK.png" ImageSize="28" ></local:CommandsInfoData>
+                    <local:CommandsInfoData EngName="IA_OPTIONS_AXIS" RusName="IA_НАСТРОЙКИ_ОСИ" Description="Вызвать форму настроек" ImageSource="pack://application:,,,/AxisTab;component/images/options.png" ImageSize="28" ></local:CommandsInfoData>
                 </x:Array>
             </DataGrid.ItemsSource>
 

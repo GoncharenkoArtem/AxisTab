@@ -13,7 +13,7 @@ using AxisTab;
 
 
 /* Методы и обработчики для Ribbon */
-namespace AxisTAb
+namespace AxisTab
 {
     public partial class RibbonInitializer : IExtensionApplication
     {
@@ -96,9 +96,9 @@ namespace AxisTAb
                 Axis axis = null;
                 try
                 {axis = AutocadXData.AxisXdataParse(e.DBObject.Id);}
-                catch (Autodesk.AutoCAD.Runtime.Exception ex) { return; }
+                catch (Autodesk.AutoCAD.Runtime.Exception) { return; }
 
-                if (axis!=null && axis.PolyID != null)    // если это ось
+                if (axis!=null && axis.PolyID != ObjectId.Null)    // если это ось
                 {
                     // проверка является ли удаляемый объект осью
                     string msg = $"Полилиния привязана к оси {axis.Name}. Вы точно хотите ее удалить?";
@@ -451,7 +451,7 @@ namespace AxisTAb
             if (polylineAxis == null) return; // выходим, ошибка выбора оси
             double koef = db.Insunits == UnitsValue.Meters ? 1 : 0.001;   // коэффициент перевода в метры
 
-            var peoPk = new PromptDoubleOptions("\n Введите пикет в метрах (1ПК = 100м): ");
+            var peoPk = new PromptDoubleOptions("\n Введите пикет (например, 12.5 = ПК12+50): ");
             var perPk = ed.GetDouble(peoPk);
             if (perPk.Status != PromptStatus.OK)
             {
@@ -502,8 +502,8 @@ namespace AxisTAb
                 MText mtext = new MText();
                 mtext.Contents = PK;
                 mtext.Rotation = angle;
-                mtext.TextHeight = userOptions.PKTextHeight / curSC.Scale;
-                mtext.Location = pointOnAxis + ((vector - vector.GetPerpendicularVector()) / curSC.Scale);
+                mtext.TextHeight = userOptions.PKTextHeight / koef / curSC.Scale;
+                mtext.Location = pointOnAxis + ((vector - vector.GetPerpendicularVector()) / koef / curSC.Scale);
 
                 // Получаем таблицу текстовых стилей
                 TextStyleTable textStyleTable = (TextStyleTable)tr.GetObject(db.TextStyleTableId, OpenMode.ForRead);

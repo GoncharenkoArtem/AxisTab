@@ -1,4 +1,4 @@
-﻿using AxisTAb;
+﻿
 using Autodesk.AutoCAD.DatabaseServices;
 using Autodesk.AutoCAD.EditorInput;
 using System.Collections.Generic;
@@ -6,7 +6,10 @@ using System.Linq;
 using System;
 using System.Windows;
 
-namespace AxisTAb
+
+
+
+namespace AxisTab
 {
 
     public class Axis
@@ -73,9 +76,6 @@ namespace AxisTAb
             RibbonInitializer.Instance?.ListOFAxisRebuild(this);
         }
 
-
-
-
         public bool GetAxisStartPoint()
         {
             var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
@@ -110,7 +110,7 @@ namespace AxisTAb
             }
 
             // Настройки промпта выбора начальной точки
-            var peoPk = new PromptDoubleOptions("\n Введите начальный пикет оси в метрах (1ПК = 100м): ");
+            var peoPk = new PromptDoubleOptions("\n Введите начальный пикет оси (например, 12.5 = ПК12+50): ");
             var perPk = ed.GetDouble(peoPk);
             if (perPk.Status != PromptStatus.OK)
             {

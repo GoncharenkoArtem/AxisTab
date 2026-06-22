@@ -1,20 +1,13 @@
-﻿using Autodesk.AutoCAD.Interop.Common;
-using AxisTAb;
+﻿using AxisTab;
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using System.Windows.Threading;
 
 namespace AxisTab
@@ -83,7 +76,7 @@ namespace AxisTab
             windowStoryboardEnd.Completed += WindowStoryboardEnd_Completed; 
 
             this.MouseLeftButtonDown += AnimationForm_MouseLeftButtonDown;
-
+      
             Random rndm = new Random();
             type = rndm.Next(0, 4);
 
@@ -100,6 +93,8 @@ namespace AxisTab
             // старт анимации
             StartAnimation();
         }
+
+      
 
 
 
@@ -409,6 +404,7 @@ namespace AxisTab
         private void WindowStoryboardEnd_Completed(object sender, EventArgs e)
         {
             this.Close();
+            RibbonInitializer.Instance.animationForm = null;
         }
 
 
@@ -466,7 +462,7 @@ namespace AxisTab
         // настройка картинки
         void GetImage(Image element, string name, int top, int left)
         {
-            BitmapImage image = RibbonInitializer.Instance.LoadImage($"pack://application:,,,/AxisTAb;component/images/{name}.png");
+            BitmapImage image = RibbonInitializer.Instance.LoadImage($"pack://application:,,,/AxisTab;component/images/{name}.png");
             image.Freeze();
             element.Source = image;
             element.Width = image.PixelWidth;

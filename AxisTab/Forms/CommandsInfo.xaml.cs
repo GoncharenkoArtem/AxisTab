@@ -1,17 +1,8 @@
-﻿using AxisTAb;
+﻿using AxisTab;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 
 namespace AxisTab
 {
@@ -68,6 +59,7 @@ namespace AxisTab
         private void grid_commands_MouseDoubleClick(object sender, MouseButtonEventArgs e)
         {
 
+            // TODO DataGrid больше не поддерживается. Взамен используйте DataGridView. Подробности см. в https://docs.microsoft.com/en-us/dotnet/core/compatibility/winforms#removed-controls
             DataGrid grid = sender as DataGrid;
             CommandsInfoData cid = grid.SelectedItem as CommandsInfoData;
 

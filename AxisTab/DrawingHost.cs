@@ -1,8 +1,8 @@
-﻿using AxisTAb;
+﻿
 using System;
 using System.Collections.Generic;
 
-namespace AxisTAb
+namespace AxisTab
 {
     public static class DrawingHost
     {

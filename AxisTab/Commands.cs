@@ -1,6 +1,4 @@
-﻿using AxisTAb;
-using Autodesk.AutoCAD.EditorInput;
-using Autodesk.AutoCAD.Runtime;
+﻿using Autodesk.AutoCAD.Runtime;
 using AxisTab;
 
 
@@ -71,16 +69,6 @@ public static class AxisTabCommands
       animForm.Show();
     }
 
-
-
-
-    // вывод сообщения в editor
-    private static void EditorMessage(string txt)
-    {
-        var doc = Autodesk.AutoCAD.ApplicationServices.Core.Application.DocumentManager.MdiActiveDocument;
-        var ed = doc.Editor;
-        ed.WriteMessage($" \n {txt}");
-    }
 
 
 
